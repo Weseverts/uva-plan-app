@@ -172,6 +172,8 @@ const REGEN_STOCK=["Well stocked","Moderately stocked","Poorly stocked","Not sto
 const REGEN_DIST=["Uniform throughout","Patchy","Only in gaps & openings","Absent"];
 const REGEN_SIZE=["Seedling","Sapling","Seedling & sapling"];
 const REGEN_ABUND=["Abundant","Common","Scattered","Rare"];
+// Stems/acre ranges filled in when an abundance is picked. 350/ac is the UVA regeneration standard (MMS 3.2.3).
+const REGEN_RANGE={Abundant:"over 1,000",Common:"350–1,000",Scattered:"100–349",Rare:"under 100"};
 const REGEN_BARRIERS=["None observed","Deer/moose browse","Beech","Hay-scented fern","Striped maple / hophornbeam","Invasive plants","Low light / dense canopy","Raspberry / competing vegetation","Poor seed source"];
 function normSp(x){
   const t=String(x).trim().replace(/\s+/g," ");const lo=t.toLowerCase();
@@ -201,7 +203,7 @@ function regenSentence(s){
   if(s.regenStocking){let t=s.regenStocking.replace(" / absent","");parts.push(`Regeneration is ${t.toLowerCase()}${s.regenDist&&s.regenDist!=="Absent"?", "+s.regenDist.toLowerCase().replace("only in","found only in")+",":""}`)}
   if(rows.length){
     const order={Abundant:0,Common:1,Scattered:2,Rare:3,"":4};
-    const d=rows.slice().sort((a,b)=>(order[a.abundance||""])-(order[b.abundance||""])).map(r=>{let x=r.species.toLowerCase();const bits=[];if(r.abundance)bits.push(r.abundance.toLowerCase());if(r.size)bits.push(r.size.toLowerCase()+(r.size==="Seedling & sapling"?" sizes":"s"));if(num(r.stems)!=null)bits.push(num(r.stems).toLocaleString()+" stems/ac");return bits.length?`${x} (${bits.join(", ")})`:x});
+    const d=rows.slice().sort((a,b)=>(order[a.abundance||""])-(order[b.abundance||""])).map(r=>{let x=r.species.toLowerCase();const bits=[];if(r.abundance)bits.push(r.abundance.toLowerCase());if(r.size)bits.push(r.size.toLowerCase()+(r.size==="Seedling & sapling"?" sizes":"s"));if(String(r.stems||"").trim())bits.push((num(r.stems)!=null&&/^[\d,.\s]+$/.test(r.stems)?num(r.stems).toLocaleString():String(r.stems).trim())+" stems/ac");return bits.length?`${x} (${bits.join(", ")})`:x});
     parts.push((parts.length?"with ":"Regeneration includes ")+d.join(", "));
   }
   let out=parts.join(" ")+".";
@@ -366,8 +368,8 @@ function vStands(){
   <div class="${nonForest?"hide":""}"><h3>Regeneration</h3>
   ${G(b,[["regenStocking","Overall stocking","sel",{o:REGEN_STOCK}],["regenDist","Distribution","sel",{o:REGEN_DIST}]])}
   <div class="l" style="margin-top:8px">Species present</div>
-  ${R(b+".regen",[["species","Species","sel",{o:SPECIES}],["size","Size","sel",{o:REGEN_SIZE}],["abundance","Abundance","sel",{o:REGEN_ABUND}],["stems","Stems/ac (optional)","n"]],"1.6fr 1fr 1fr .9fr","Add species",{tpl:{species:"",size:"",abundance:"",stems:""}})}
-  <span class="hint">Seedling: under 1" DBH · Sapling: 1–4.9" DBH</span>
+  ${R(b+".regen",[["species","Species","sel",{o:SPECIES}],["size","Size","sel",{o:REGEN_SIZE}],["abundance","Abundance","sel",{o:REGEN_ABUND}],["stems","Stems/ac","t"]],"1.6fr 1fr 1fr .9fr","Add species",{tpl:{species:"",size:"",abundance:"",stems:""}})}
+  <span class="hint">Seedling: under 1" DBH · Sapling: 1–4.9" DBH · Stems/ac fills from abundance: ${REGEN_ABUND.map(a=>a+" "+REGEN_RANGE[a]).join(" · ")}. Type over it if you counted.</span>
   ${G(b,[["regenBarrierList","Barriers to regeneration","chk",{o:REGEN_BARRIERS,wide:true}],["regenBarriers","Other barrier notes (optional)","t",{wide:true}]])}
   ${regenSentence(s)?`<p class="calc"><b>Plan text:</b> ${esc(regenSentence(s))}</p>`:""}
   <details${s.regenNarrative?" open":""}><summary>Extra regeneration notes (optional)</summary><div class="inner">${G(b,[["regenNarrative","","ta",{wide:true,ph:"Anything the dropdowns don't cover"}]])}</div></details></div>
@@ -581,7 +583,10 @@ document.addEventListener("input",e=>{
 });
 document.addEventListener("change",e=>{
   const t=e.target;
-  if(t.tagName==="SELECT"&&t.dataset.p){setP(P,t.dataset.p,t.value);persist();
+  if(t.tagName==="SELECT"&&t.dataset.p){const prevSel=getP(P,t.dataset.p);setP(P,t.dataset.p,t.value);
+    const am=t.dataset.p.match(/^(stands\.\d+\.regen\.\d+)\.abundance$/);
+    if(am){const row=getP(P,am[1]);const cur=String(row.stems||"").trim();if(!cur||Object.values(REGEN_RANGE).includes(cur)){row.stems=REGEN_RANGE[t.value]||"";const el=document.querySelector(`[data-p="${am[1]}.stems"]`);if(el)el.value=row.stems}}
+    persist();
     if(/\.(species|regen|invasives)\.\d+\.\w+$/.test(t.dataset.p)||/\.(regenStocking|regenDist)$/.test(t.dataset.p)){if(tab==="stands")refreshPanel();clearTimeout(window.__selT);window.__selT=setTimeout(()=>{if(!document.activeElement||document.activeElement.tagName!=="SELECT")rerenderKeepFocus()},1200);return}
     rerenderKeepFocus();return}
   const grp=t.closest(".checks");
