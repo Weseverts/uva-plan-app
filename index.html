@@ -70,6 +70,7 @@ button.b{font:inherit;font-size:15px;border:1px solid var(--line);background:var
 button.b.p{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
 button.b.s{padding:4px 10px;min-height:32px;font-size:13px}
 button.b.x{color:var(--bad)}
+button.armed{background:var(--bad);color:#fff;border-color:var(--bad)}
 header button.b{background:rgba(255,255,255,.14);color:var(--accent-ink);border-color:rgba(255,255,255,.3)}
 .rep{display:flex;flex-direction:column;gap:8px}
 .row{display:grid;gap:8px;align-items:end;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--bg)}
@@ -569,6 +570,13 @@ document.addEventListener("keydown",e=>{
   persist();render();
   const nx=document.querySelector(`[data-p="stands.${si}.species.${ri+1}.species"]`);if(nx)nx.focus();
 });
+// Confirm by tapping twice (pop-up dialogs are blocked inside the Claude app)
+function twoTap(btn,msg){
+  if(btn.dataset.armed==="1"){btn.dataset.armed="";return true}
+  const old=btn.innerHTML;btn.dataset.armed="1";btn.innerHTML=msg||"Tap again to confirm";btn.classList.add("armed");
+  clearTimeout(btn._t);btn._t=setTimeout(()=>{btn.dataset.armed="";btn.innerHTML=old;btn.classList.remove("armed")},4000);
+  return false;
+}
 function rerenderKeepFocus(){const a=document.activeElement;const p=a&&a.dataset&&a.dataset.p;const st=a&&a.selectionStart;render();if(p){const e=document.querySelector(`[data-p="${CSS.escape(p)}"]`);if(e){e.focus();try{if(st!=null)e.setSelectionRange(st,st)}catch(_){}}}}
 
 document.addEventListener("input",e=>{
@@ -608,14 +616,14 @@ document.addEventListener("click",e=>{
   if(d.stand!=null){standIdx=+d.stand;if(typeof spPreview!=="undefined")spPreview=null;tab="stands";render();window.scrollTo(0,0);return}
   if(d.standadd){const n=P.stands.reduce((m,s)=>Math.max(m,parseInt(s.number)||0),0)+1;P.stands.push(blankStand(n));standIdx=P.stands.length-1;persist();render();window.scrollTo(0,0);return}
   if(d.standdup){const c=JSON.parse(JSON.stringify(P.stands[standIdx]));c.id=uid();c.number=String(P.stands.reduce((m,s)=>Math.max(m,parseInt(s.number)||0),0)+1);c.acres="";P.stands.push(c);standIdx=P.stands.length-1;persist();render();window.scrollTo(0,0);return}
-  if(d.standdel!=null){if(P.stands.length<2){alert("A plan needs at least one stand.");return}if(confirm("Delete stand "+P.stands[+d.standdel].number+"?")){P.stands.splice(+d.standdel,1);standIdx=Math.max(0,standIdx-1);persist();render()}return}
+  if(d.standdel!=null){if(P.stands.length<2){alert("A plan needs at least one stand.");return}if(twoTap(t,"Tap again to delete stand "+esc(P.stands[+d.standdel].number))){P.stands.splice(+d.standdel,1);standIdx=Math.max(0,standIdx-1);persist();render()}return}
   if(d.fillugs!=null){const s=P.stands[+d.fillugs];s.ugs=String(r1(num(s.baTotal)-num(s.ags)));persist();render();return}
   if(d.add){const arr=getP(P,d.add);if(d.blanktrt)arr.push(blankTreatment());else{const first=arr[0];const o={};if(first)Object.keys(first).forEach(k=>o[k]="");arr.push(Object.assign(o,JSON.parse(d.tpl||"{}")))}persist();render();return}
   if(d.del){const arr=getP(P,d.del);arr.splice(+d.i,1);persist();render();return}
   if(t.id==="newProp"){const p=blankProp();DB.props[p.id]=p;DB.current=p.id;P=p;tab="property";standIdx=0;persist();render();return}
   if(t.id==="doExport"){exportFile();return}
   if(t.id==="doShare"){exportFile("share");return}
-  if(t.id==="delProp"){if(!confirm("Delete this property from this device? Make sure you've downloaded the data file first."))return;delete DB.props[P.id];const ks=Object.keys(DB.props);if(!ks.length){const p=blankProp();DB.props[p.id]=p}DB.current=Object.keys(DB.props)[0];P=DB.props[DB.current];tab="property";persist();render();return}
+  if(t.id==="delProp"){if(!twoTap(t,"Tap again to delete this property"))return;delete DB.props[P.id];const ks=Object.keys(DB.props);if(!ks.length){const p=blankProp();DB.props[p.id]=p}DB.current=Object.keys(DB.props)[0];P=DB.props[DB.current];tab="property";persist();render();return}
 });
 document.getElementById("propPick").addEventListener("change",e=>{DB.current=e.target.value;P=DB.props[DB.current];standIdx=0;persist();render()});
 function exportFile(){
@@ -905,9 +913,9 @@ document.addEventListener("click",e=>{
   else if(a==="zin"&&MV){MV.sc*=1.4;drawMap(false)}
   else if(a==="zout"&&MV){MV.sc/=1.4;drawMap(false)}
   else if(a==="load"){document.getElementById("geoFile").click()}
-  else if(a==="clear"){if(confirm("Remove all boundaries from this property?")){M().features=[];MV=null;persist();render()}}
+  else if(a==="clear"){if(twoTap(t,"Tap again to remove all boundaries")){M().features=[];MV=null;persist();render()}}
   else if(a==="cruise")makeCruise();
-  else if(a==="clearcruise"){if(confirm("Clear all cruise plots?")){M().cruise=[];persist();render()}}
+  else if(a==="clearcruise"){if(twoTap(t,"Tap again to clear all plots")){M().cruise=[];persist();render()}}
   else if(a==="gpx")gpxOut();
 });
 document.addEventListener("input",e=>{if(e.target.dataset.mapstand!=null){M().features[+e.target.dataset.mapstand].stand=e.target.value.trim();persist()}});
