@@ -361,8 +361,9 @@ function vStands(){
   <div class="tot ${totCls}" id="spTot">Total: ${c.spTotal||0}%${c.spTotal&&c.spTotal!==100?" (should be 100)":""}</div>
   ${c.cover?`<p class="calc"><b>Cover type line:</b> ${esc(c.cover)}${c.spBA?`<br><b>BA by species (ft²/ac):</b> ${esc(c.spBA)}`:""}</p>`:""}
   ${G(b,[["stocking","Stocking description","ta",{wide:true}]])}
-  <details><summary>Diameter distribution (optional, or Claude will build it from tally sheets)</summary><div class="inner tw"><table><thead><tr><th>DBH class</th><th>Trees/ac</th><th>BA/ac</th><th>Snags/ac</th></tr></thead><tbody>
+  <details><summary>Diameter distribution (required for forested stands; Claude builds it if you send tally sheets)</summary><div class="inner tw"><p class="hint">Type BA/ac and Trees/ac fills in: BA ÷ (0.005454 × class DBH²). The 24+ class uses 26". Type over Trees/ac if you have counts.</p><table><thead><tr><th>DBH class</th><th>Trees/ac</th><th>BA/ac</th><th>Snags/ac</th></tr></thead><tbody>
   ${s.diam.map((d,i)=>`<tr><td>${esc(d.cls)}"</td>${["tpa","ba","snags"].map(k=>`<td><input inputmode="decimal" data-p="${b}.diam.${i}.${k}" value="${esc(d[k])}"></td>`).join("")}</tr>`).join("")}
+  <tr id="diamTot">${diamTotHTML(s)}</tr>
   </tbody></table></div></details>
   </section>
   <section class="card"><h2>Regeneration, invasives, browse</h2>
@@ -549,10 +550,17 @@ function render(){
   document.getElementById("main").innerHTML=v;
   if(tab==="map")bindMap();
 }
+function clsMid(c){const n=parseFloat(c);return /\+/.test(String(c))?n+2:n}
+function diamTotHTML(st){const sum=k=>r1((st.diam||[]).reduce((a,d)=>a+(num(d[k])||0),0));return `<td><b>Total</b></td><td><b>${sum("tpa")}</b></td><td><b>${sum("ba")}</b></td><td><b>${sum("snags")}</b></td>`}
 function autoFill(path,val,prev){
   let m=path.match(/^stands\.(\d+)\.(baTotal|ags)$/);
   if(m){const st=P.stands[+m[1]],ba=num(st.baTotal),ags=num(st.ags);
     if(ba!=null&&ags!=null){st.ugs=String(r1(ba-ags));const el=document.querySelector(`[data-p="stands.${m[1]}.ugs"]`);if(el)el.value=st.ugs}}
+  m=path.match(/^stands\.(\d+)\.diam\.(\d+)\.(ba|tpa)$/);
+  if(m){const st=P.stands[+m[1]],row=st.diam[+m[2]];
+    if(m[3]==="tpa")row.tpaAuto=false;
+    else if(row.tpaAuto!==false||!String(row.tpa||"").trim()){const ba=num(row.ba);row.tpa=ba==null?"":String(r1(ba/(0.005454*Math.pow(clsMid(row.cls),2))));row.tpaAuto=true;const el=document.querySelector(`[data-p="stands.${m[1]}.diam.${m[2]}.tpa"]`);if(el)el.value=row.tpa}
+    const tt=document.getElementById("diamTot");if(tt)tt.innerHTML=diamTotHTML(st)}
   m=path.match(/^stands\.(\d+)\.invDate$/);
   if(m&&val){P.stands.forEach((st,i)=>{if(i!==+m[1]&&(!st.invDate||st.invDate===prev))st.invDate=val})}
   m=path.match(/^stands\.(\d+)\.species\.\d+\.pct$/);
