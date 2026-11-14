@@ -50,6 +50,8 @@ textarea{min-height:84px;resize:vertical;padding-right:46px}
 textarea.big{min-height:160px}
 .taw{position:relative}
 .mic{position:absolute;right:6px;top:6px;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--card);cursor:pointer;font-size:16px;line-height:1}
+.michelp{margin-top:6px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card)}
+kbd{border:1px solid var(--line);border-radius:4px;padding:0 4px;font:inherit;font-size:.9em}
 .mic.rec{background:var(--bad);border-color:var(--bad);animation:pulse 1.2s infinite}
 @keyframes pulse{50%{opacity:.55}}
 .chk-panel{border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:16px;background:var(--card)}
@@ -162,6 +164,52 @@ function blankProp(){return {
 let DB=lsGet()||{current:null,props:{}};
 if(!DB.current||!DB.props[DB.current]){const p=blankProp();DB.props[p.id]=p;DB.current=p.id}
 let P=DB.props[DB.current];
+const LIST=id=>[...document.querySelectorAll("#"+id+" option")].map(o=>o.value||o.textContent);
+const SPECIES=LIST("dl-species").concat(["Norway spruce","Scotch pine","Other hardwood","Other softwood"]);
+const NCOMM=LIST("dl-nc").concat(["Other (describe in notes)"]);
+const INVASIVES=["Honeysuckle (bush)","Common buckthorn","Glossy buckthorn","Japanese barberry","Oriental bittersweet","Multiflora rose","Japanese knotweed","Garlic mustard","Burning bush","Norway maple","Wild chervil","Goutweed","Black swallowwort","Common reed (Phragmites)","Purple loosestrife","Other"];
+const REGEN_STOCK=["Well stocked","Moderately stocked","Poorly stocked","Not stocked / absent"];
+const REGEN_DIST=["Uniform throughout","Patchy","Only in gaps & openings","Absent"];
+const REGEN_SIZE=["Seedling","Sapling","Seedling & sapling"];
+const REGEN_ABUND=["Abundant","Common","Scattered","Rare"];
+const REGEN_BARRIERS=["None observed","Deer/moose browse","Beech","Hay-scented fern","Striped maple / hophornbeam","Invasive plants","Low light / dense canopy","Raspberry / competing vegetation","Poor seed source"];
+function normSp(x){
+  const t=String(x).trim().replace(/\s+/g," ");const lo=t.toLowerCase();
+  const hit=SPECIES.find(o=>o.toLowerCase()===lo);if(hit)return hit;
+  try{for(const [name,syn] of SP_SYN){if(syn.includes(lo))return name}}catch(e){}
+  return t;
+}
+function migrateProp(p){
+  (p.stands||[]).forEach(st=>{
+    const m=String(st.community||"").trim().match(/^S\s*([1-5])\s*([A-D])?$/i);
+    if(m){if(!st.sRank)st.sRank="S"+m[1];if(m[2]&&!st.eoRank)st.eoRank=m[2].toUpperCase();st.community=""}
+    const ba=num(st.baTotal),ags=num(st.ags);
+    if(ba!=null&&ags!=null&&(st.ugs===""||st.ugs==null))st.ugs=String(r1(ba-ags));
+    (st.species||[]).forEach(r=>{if(r.species)r.species=normSp(r.species);if(typeof r.pct==="string"&&/%/.test(r.pct))r.pct=r.pct.replace(/\s*%\s*/g,"").trim()});
+    if(!Array.isArray(st.regen))st.regen=[];
+    st.regen.forEach(r=>{if(r.species)r.species=normSp(r.species)});
+    st.regen.forEach(r=>{if(r.abundance==null)r.abundance=""});
+    if(!Array.isArray(st.regenBarrierList))st.regenBarrierList=[];
+    if(st.regenStocking==null)st.regenStocking="";
+    if(st.regenDist==null)st.regenDist="";
+  });
+}
+function regenSentence(s){
+  const rows=(s.regen||[]).filter(r=>r.species);
+  if(!s.regenStocking&&!rows.length)return "";
+  const parts=[];
+  if(s.regenStocking){let t=s.regenStocking.replace(" / absent","");parts.push(`Regeneration is ${t.toLowerCase()}${s.regenDist&&s.regenDist!=="Absent"?", "+s.regenDist.toLowerCase().replace("only in","found only in")+",":""}`)}
+  if(rows.length){
+    const order={Abundant:0,Common:1,Scattered:2,Rare:3,"":4};
+    const d=rows.slice().sort((a,b)=>(order[a.abundance||""])-(order[b.abundance||""])).map(r=>{let x=r.species.toLowerCase();const bits=[];if(r.abundance)bits.push(r.abundance.toLowerCase());if(r.size)bits.push(r.size.toLowerCase()+(r.size==="Seedling & sapling"?" sizes":"s"));if(num(r.stems)!=null)bits.push(num(r.stems).toLocaleString()+" stems/ac");return bits.length?`${x} (${bits.join(", ")})`:x});
+    parts.push((parts.length?"with ":"Regeneration includes ")+d.join(", "));
+  }
+  let out=parts.join(" ")+".";
+  const bl=(s.regenBarrierList||[]).filter(x=>x!=="None observed");
+  if(bl.length)out+=` Barriers to regeneration: ${bl.join(", ").toLowerCase()}.`;
+  else if((s.regenBarrierList||[]).includes("None observed"))out+=" No barriers to regeneration were observed.";
+  return out.charAt(0).toUpperCase()+out.slice(1);
+}
 let tab="property", standIdx=0, saveTimer=null;
 
 function persist(){
@@ -189,7 +237,7 @@ function F(base,def){
   const ph=o.ph?` placeholder="${esc(o.ph)}"`:"";
   const list=o.list?` list="${o.list}"`:"";
   if(type==="ta") inner=`<div class="taw"><textarea id="${id}" data-p="${full}"${ph}${o.big?' class="big"':""}>${esc(val)}</textarea><button type="button" class="mic" data-mic="${full}" title="Dictate" aria-label="Dictate into this box">🎤</button></div>`;
-  else if(type==="sel") inner=`<select id="${id}" data-p="${full}"><option value=""></option>${o.o.map(x=>`<option${x===val?" selected":""}>${esc(x)}</option>`).join("")}</select>`;
+  else if(type==="sel"){const opts=(o.o||[]).slice();if(val&&typeof val==="string"&&!opts.includes(val))opts.unshift(val);inner=`<select id="${id}" data-p="${full}"><option value=""></option>${opts.map(x=>`<option${x===val?" selected":""}>${esc(x)}</option>`).join("")}</select>`;}
   else if(type==="chk"||type==="radio"){
     const arr=type==="chk"?(Array.isArray(val)?val:(val?o.o:[])):[val];
     inner=`<div class="checks" data-p="${full}" data-mode="${type}">${o.o.map(x=>{const on=arr.includes(x);return `<label class="${on?"on":""}"><input type="${type==="chk"?"checkbox":"radio"}" name="${id}" value="${esc(x)}"${on?" checked":""}>${esc(x)}</label>`}).join("")}</div>`;
@@ -288,25 +336,26 @@ function vStands(){
   <section class="card"><h2>Stand ${esc(s.number)}${s.name?": "+esc(s.name):""}</h2>${G(b,[
     ["number","Stand #","t"],["name","Stand name / cover type","t"],["acres","Mapped acres","n"],
     ["subcat","Enrollment subcategory","chk",{o:["PF","S","RF","SW","SP","NC","RTE","RA","VP","FW","OF","M","SIV","OI"],wide:true,hint:"PF productive · S sugarbush · RF reserve · SIV site IV · OI open/idle ag"}],
-    ["community","Natural community type","t",{ph:"Northern Hardwood Forest",list:"dl-nc"}],["sRank","Conservation rank (state)","sel",{o:["S1","S2","S3","S4","S5"]}],["eoRank","Occurrence rank","sel",{o:["A","B","C","D"]}],["standType","Cover type (NE aerial photo guide)","sel",{o:["BS – Black spruce","BS/T – Black spruce–tamarack","RS – Red spruce","RS/BF – Red spruce–balsam fir","RP – Red pine","WP – Eastern white pine","H – Eastern hemlock","WP/H – White pine–hemlock","PP – Pitch pine","AWC – Atlantic white-cedar","Asp – Aspen","WB – White birch","SM – Sugar maple","RM – Red maple","RO – Northern red oak","B/SM – Beech–sugar maple","SM/B/YB – Sugar maple–beech–yellow birch","WO/BO/RO – White oak–black oak–northern red oak","WP/RO/RM – White pine–red oak–red maple","RS/SM/B – Red spruce–sugar maple–beech","WB/RS/BF – White birch–red spruce–balsam fir","Other – Other (describe in stand notes)"]}],
+    ["community","Natural community type","sel",{o:NCOMM}],["sRank","Conservation rank (state)","sel",{o:["S1","S2","S3","S4","S5"]}],["eoRank","Occurrence rank","sel",{o:["A","B","C","D"]}],["standType","Cover type (NE aerial photo guide)","sel",{o:["BS – Black spruce","BS/T – Black spruce–tamarack","RS – Red spruce","RS/BF – Red spruce–balsam fir","RP – Red pine","WP – Eastern white pine","H – Eastern hemlock","WP/H – White pine–hemlock","PP – Pitch pine","AWC – Atlantic white-cedar","Asp – Aspen","WB – White birch","SM – Sugar maple","RM – Red maple","RO – Northern red oak","B/SM – Beech–sugar maple","SM/B/YB – Sugar maple–beech–yellow birch","WO/BO/RO – White oak–black oak–northern red oak","WP/RO/RM – White pine–red oak–red maple","RS/SM/B – Red spruce–sugar maple–beech","WB/RS/BF – White birch–red spruce–balsam fir","Other – Other (describe in stand notes)"]}],
     ["ageStructure","Age class structure","t",{ph:"Sapling – large sawlog"}],["ageClasses","Age classes (cohorts)","sel",{o:["1","2","3","4+"]}],
     ["soils","Dominant soil series","t",{list:"dl-soils"}],["siteClass","Site class","sel",{o:["I","II","III","IV"]}],["siteBasis","Site class basis","t",{ph:"Soil series / site index"}],
   ])}</section>
   <section class="card"><h2>Inventory</h2>${G(b,[
-    ["invMethod","Sampling method","sel",{o:["Point (variable radius)","Fixed-radius plot","Walk-through / ocular","Other"]}],["invDate","Sampling date","date"],["points","# points / plots","n"],["baf","BAF / plot size","t"],
+    ["invMethod","Sampling method","sel",{o:["Point (variable radius)","Fixed-radius plot","Walk-through / ocular","Other"]}],["invDate","Sampling date","date",{hint:"Fills the other stands too; change any of them if needed"}],["points","# points / plots","n"],["baf","BAF / plot size","t"],
     ["dataSource","Where are the numbers coming from?","radio",{o:["hand","tally sheets"],wide:true,hint:"Pick 'tally sheets' if you'll scan and send them. Claude will calculate everything below and fill it in."}],
   ]).replace(/>hand</,">I'll type them in<").replace(/>tally sheets</,">Sending scanned tally sheets<")}
-  ${G(b,[["qmd","Quadratic mean diameter (in.)","n"],["baTotal","Total BA (ft²/ac)","n"],["ags","Acceptable growing stock BA","n"],["ugs","Unacceptable growing stock BA","n"],["baMin","BA range: low point","n"],["baMax","BA range: high point","n"]])}
+  ${G(b,[["qmd","Quadratic mean diameter (in.)","n"],["baTotal","Total BA (ft²/ac)","n"],["ags","Acceptable growing stock BA","n"],["ugs","Unacceptable growing stock BA","n",{hint:"Fills in automatically: Total BA − AGS"}],["baMin","BA range: low point","n"],["baMax","BA range: high point","n"]])}
   ${c.agsCheck===false?`<div class="tot bad">AGS + UGS doesn't equal total BA</div>`:""}
-  ${num(s.baTotal)!=null&&num(s.ags)!=null&&!s.ugs?`<div style="margin-top:6px"><button class="b s" data-fillugs="${standIdx}">Fill UGS = ${r1(num(s.baTotal)-num(s.ags))}</button></div>`:""}
+  
   </section>
   <section class="card ${nonForest?"hide":""}"><h2>Species composition (% of basal area)</h2>
   <div class="f wide"><label class="l" for="f_sp_said">Say it or type it</label><div class="taw"><textarea id="f_sp_said" data-p="${b}.speciesSaid" placeholder="e.g. sugar maple forty, red maple twenty five, beech fifteen, hemlock ten, yellow birch ten">${esc(s.speciesSaid||"")}</textarea><button type="button" class="mic" data-mic="${b}.speciesSaid" title="Dictate" aria-label="Dictate species">🎤</button></div>
   <span class="hint">Tap the box and use your keyboard's mic (works with no signal), then Check. Common names, codes (SM, RM, YB…) and words like "soft maple" or "popple" all work.</span>
   <div><button class="b s p" data-spcheck="1" style="margin-top:6px">Check & fill table</button></div><div id="spPrev">${spPreviewHTML()}</div></div>
   <h3>Species table</h3>
-  ${R(b+".species",[["species","Species","t",{list:"dl-species"}],["pct","% of BA","n"]],"2fr 1fr","Add species")}
-  <div class="tot ${totCls}">Total: ${c.spTotal||0}%${c.spTotal&&c.spTotal!==100?" (should be 100)":""}</div>
+  <p class="hint">Pick a species (typing the first letters jumps to it), Tab to %, type the number and press Enter for the next row. It stops at 100%.</p>
+  ${R(b+".species",[["species","Species","sel",{o:SPECIES}],["pct","% of BA","n"]],"2fr 1fr","Add species")}
+  <div class="tot ${totCls}" id="spTot">Total: ${c.spTotal||0}%${c.spTotal&&c.spTotal!==100?" (should be 100)":""}</div>
   ${c.cover?`<p class="calc"><b>Cover type line:</b> ${esc(c.cover)}${c.spBA?`<br><b>BA by species (ft²/ac):</b> ${esc(c.spBA)}`:""}</p>`:""}
   ${G(b,[["stocking","Stocking description","ta",{wide:true}]])}
   <details><summary>Diameter distribution (optional, or Claude will build it from tally sheets)</summary><div class="inner tw"><table><thead><tr><th>DBH class</th><th>Trees/ac</th><th>BA/ac</th><th>Snags/ac</th></tr></thead><tbody>
@@ -315,11 +364,15 @@ function vStands(){
   </section>
   <section class="card"><h2>Regeneration, invasives, browse</h2>
   <div class="${nonForest?"hide":""}"><h3>Regeneration</h3>
-  ${G(b,[["regenNarrative","Regeneration description","ta",{wide:true,ph:"Well stocked with advanced and sapling red maple, aspen, balsam fir..."}]])}
-  <details><summary>Regeneration counts by species (optional)</summary><div class="inner">${R(b+".regen",[["species","Species","t",{list:"dl-species"}],["stems","Stems / acre","n"],["size","Size class","sel",{o:["Seedling","Sapling","Seedling & sapling"]}]],"2fr 1fr 1fr","Add species")}</div></details>
-  ${G(b,[["regenBarriers","Barriers to regeneration","t",{wide:true,ph:"Browse, beech, fern, invasives, light, or 'none observed'"}]])}</div>
+  ${G(b,[["regenStocking","Overall stocking","sel",{o:REGEN_STOCK}],["regenDist","Distribution","sel",{o:REGEN_DIST}]])}
+  <div class="l" style="margin-top:8px">Species present</div>
+  ${R(b+".regen",[["species","Species","sel",{o:SPECIES}],["size","Size","sel",{o:REGEN_SIZE}],["abundance","Abundance","sel",{o:REGEN_ABUND}],["stems","Stems/ac (optional)","n"]],"1.6fr 1fr 1fr .9fr","Add species",{tpl:{species:"",size:"",abundance:"",stems:""}})}
+  <span class="hint">Seedling: under 1" DBH · Sapling: 1–4.9" DBH</span>
+  ${G(b,[["regenBarrierList","Barriers to regeneration","chk",{o:REGEN_BARRIERS,wide:true}],["regenBarriers","Other barrier notes (optional)","t",{wide:true}]])}
+  ${regenSentence(s)?`<p class="calc"><b>Plan text:</b> ${esc(regenSentence(s))}</p>`:""}
+  <details${s.regenNarrative?" open":""}><summary>Extra regeneration notes (optional)</summary><div class="inner">${G(b,[["regenNarrative","","ta",{wide:true,ph:"Anything the dropdowns don't cover"}]])}</div></details></div>
   <h3>Introduced invasive plants</h3>
-  ${R(b+".invasives",[["species","Species","t",{ph:"Honeysuckle"}],["maturity","Maturity","sel",{o:["Seedling","Sapling","Mature","Mixed"]}],["distribution","Distribution","t",{ph:"Field edges, group openings"}],["infestation","Infestation","sel",{o:["Light <5%","Medium 5–20%","Moderate 21–50%","Heavy >50%"]}]],"1.2fr 1fr 1.6fr 1fr","Add invasive")}
+  ${R(b+".invasives",[["species","Species","sel",{o:INVASIVES}],["maturity","Maturity","sel",{o:["Seedling","Sapling","Mature","Mixed"]}],["distribution","Distribution","t",{ph:"Field edges, group openings"}],["infestation","Infestation","sel",{o:["Light <5%","Medium 5–20%","Moderate 21–50%","Heavy >50%"]}]],"1.2fr 1fr 1.6fr 1fr","Add invasive")}
   ${G(b,[["invasiveLevel","Overall stand infestation","radio",{o:["None","Light","Medium","Moderate","Heavy"],wide:true}]])}
   <div class="${nonForest?"hide":""}"><h3>Browse</h3>${G(b,[["browseIntensity","Intensity","radio",{o:["Low","Moderate","High"]}],["browsePattern","Pattern","radio",{o:["Distributed throughout","Localized"]}]])}</div>
   <div class="${(s.subcat||[]).some(x=>x==="RF"||x==="OF")?"":"hide"}"><h3>Coarse woody material (pieces/ac, &gt;4 ft)</h3>${G(b+".cwm",[["a",'8–12"',"n"],["b",'14–18"',"n"],["c",'20"+',"n"],["decay","Decay classes present","t",{ph:"2, 3, 4"}]])}</div>
@@ -391,8 +444,8 @@ function standChecks(s){
       }
     }
     if(forest){
-      add("Regeneration","regenNarrative",v("regenNarrative")||(s.regen||[]).some(r=>r.species));
-      add("Barriers to regeneration","regenBarriers",v("regenBarriers"));
+      add("Regeneration stocking & species","regenStocking",(v("regenStocking")&&(s.regen||[]).some(r=>r.species))||v("regenNarrative"));
+      add("Barriers to regeneration","regenBarrierList",(s.regenBarrierList||[]).length||v("regenBarriers"));
       add("Browse intensity","browseIntensity",v("browseIntensity"));
       add("Browse pattern","browsePattern",v("browsePattern"));
     }
@@ -485,6 +538,7 @@ function vExport(){
 
 /* ---------- render & events ---------- */
 function render(){
+  migrateProp(P);
   const pick=document.getElementById("propPick");
   pick.innerHTML=Object.values(DB.props).sort((a,b)=>(b.updated||b.created).localeCompare(a.updated||a.created)).map(p=>`<option value="${p.id}"${p.id===P.id?" selected":""}>${esc((p.owners[0]&&p.owners[0].name)||"New property")}${p.property.town?" – "+esc(p.property.town):""}</option>`).join("");
   document.getElementById("nav").innerHTML=TABS.map(([k,l])=>`<button data-tab="${k}" class="${k===tab?"on":""}">${l}</button>`).join("");
@@ -492,18 +546,44 @@ function render(){
   document.getElementById("main").innerHTML=v;
   if(tab==="map")bindMap();
 }
+function autoFill(path,val,prev){
+  let m=path.match(/^stands\.(\d+)\.(baTotal|ags)$/);
+  if(m){const st=P.stands[+m[1]],ba=num(st.baTotal),ags=num(st.ags);
+    if(ba!=null&&ags!=null){st.ugs=String(r1(ba-ags));const el=document.querySelector(`[data-p="stands.${m[1]}.ugs"]`);if(el)el.value=st.ugs}}
+  m=path.match(/^stands\.(\d+)\.invDate$/);
+  if(m&&val){P.stands.forEach((st,i)=>{if(i!==+m[1]&&(!st.invDate||st.invDate===prev))st.invDate=val})}
+  m=path.match(/^stands\.(\d+)\.species\.\d+\.pct$/);
+  if(m){const el=document.getElementById("spTot");if(el){const c=standCalc(P.stands[+m[1]]);el.textContent=`Total: ${c.spTotal||0}%`+(c.spTotal&&c.spTotal!==100?" (should be 100)":"");el.className="tot "+(c.spTotal===100?"ok":(c.spTotal?"warn":""))}}
+}
+document.addEventListener("keydown",e=>{
+  const t=e.target;if(e.key!=="Enter"||!t.dataset||!t.dataset.p)return;
+  const m=t.dataset.p.match(/^stands\.(\d+)\.species\.(\d+)\.pct$/);if(!m)return;
+  e.preventDefault();
+  const si=+m[1],ri=+m[2],st=P.stands[si];
+  setP(P,t.dataset.p,t.value);
+  const tot=standCalc(st).spTotal||0;
+  if(tot>=100){persist();render();const el=document.getElementById("spTot");if(el)el.scrollIntoView({block:"center"});return}
+  if(ri+1>=st.species.length)st.species.push({species:"",pct:""});
+  persist();render();
+  const nx=document.querySelector(`[data-p="stands.${si}.species.${ri+1}.species"]`);if(nx)nx.focus();
+});
 function rerenderKeepFocus(){const a=document.activeElement;const p=a&&a.dataset&&a.dataset.p;const st=a&&a.selectionStart;render();if(p){const e=document.querySelector(`[data-p="${CSS.escape(p)}"]`);if(e){e.focus();try{if(st!=null)e.setSelectionRange(st,st)}catch(_){}}}}
 
 document.addEventListener("input",e=>{
   const t=e.target;
   if(t.dataset.p&&!t.dataset.p.startsWith("__")&&(t.tagName==="INPUT"&&t.type!=="checkbox"&&t.type!=="radio"||t.tagName==="TEXTAREA"||t.tagName==="SELECT")){
-    setP(P,t.dataset.p,t.value);persist();
+    const prev=getP(P,t.dataset.p);
+    setP(P,t.dataset.p,t.value);
+    autoFill(t.dataset.p,t.value,prev);
+    persist();
     if(tab==="stands") refreshPanel();
   }
 });
 document.addEventListener("change",e=>{
   const t=e.target;
-  if(t.tagName==="SELECT"&&t.dataset.p){setP(P,t.dataset.p,t.value);persist();rerenderKeepFocus();return}
+  if(t.tagName==="SELECT"&&t.dataset.p){setP(P,t.dataset.p,t.value);persist();
+    if(/\.(species|regen|invasives)\.\d+\.\w+$/.test(t.dataset.p)||/\.(regenStocking|regenDist)$/.test(t.dataset.p)){if(tab==="stands")refreshPanel();clearTimeout(window.__selT);window.__selT=setTimeout(()=>{if(!document.activeElement||document.activeElement.tagName!=="SELECT")rerenderKeepFocus()},1200);return}
+    rerenderKeepFocus();return}
   const grp=t.closest(".checks");
   if(grp){
     const p=grp.dataset.p;
@@ -570,9 +650,34 @@ function jumpNow(path){
 /* ---------- dictation ---------- */
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 let rec=null, recPath=null, recBtn=null;
+let DICT=null;
+if(window.claude&&window.claude.use){window.claude.use("dictation").then(d=>{DICT=d}).catch(()=>{})}
+let dictPath=null,dictBtn=null,dictSubs=[];
+function micHelp(path){
+  const ta=document.querySelector(`[data-p="${CSS.escape(path)}"]`);if(!ta)return;ta.focus();
+  const w=ta.closest(".taw")||ta.parentElement;let h=w.parentElement.querySelector(".michelp");
+  if(h){h.remove();return}
+  h=document.createElement("div");h.className="michelp hint";
+  h.innerHTML=`<b>This browser can't take dictation directly.</b> The box is ready: press <kbd>Win</kbd> + <kbd>H</kbd> to start Windows voice typing and just talk (works in Firefox). Or open the app in Chrome or Edge, where this 🎤 button dictates. On the phone, use the keyboard's mic.`;
+  w.insertAdjacentElement("afterend",h);
+}
+function toggleDict(path,btn){
+  if(dictPath){const same=dictPath===path;DICT.stop().catch(()=>{});if(same)return}
+  const ta=document.querySelector(`[data-p="${CSS.escape(path)}"]`);if(!ta)return;
+  let base=ta.value&&!/\s$/.test(ta.value)?ta.value+" ":ta.value;const isTmp=path.startsWith("__");
+  const p=DICT.start();dictPath=path;dictBtn=btn;btn.classList.add("rec");
+  const cur=()=>document.querySelector(`[data-p="${CSS.escape(path)}"]`)||ta;
+  const save=()=>{if(!isTmp){setP(P,path,cur().value.trim());persist()}};
+  dictSubs.forEach(u=>u());dictSubs=[
+    DICT.onPartial(({text})=>{cur().value=base+text}),
+    DICT.onFinal(({text})=>{base+=text.trim()+" ";cur().value=base;save()}),
+    DICT.onState(({state,reason})=>{if(state==="idle"){btn.classList.remove("rec");const b2=document.querySelector(`[data-mic="${CSS.escape(path)}"]`);if(b2)b2.classList.remove("rec");cur().value=base.trimEnd()+(base.trim()?" ":"");save();dictPath=null;dictSubs.forEach(u=>u());dictSubs=[];if(reason==="not_granted"||reason==="unavailable"){DICT=null;micHelp(path)}if(tab==="stands")refreshPanel()}})];
+  p.catch(err=>{btn.classList.remove("rec");dictPath=null;const c=err&&err.code;if(c==="not_granted"||c==="unavailable"){DICT=null;micHelp(path)}});
+}
 function toggleMic(path,btn){
+  if(DICT){toggleDict(path,btn);return}
   if(rec){const same=recPath===path;rec.stop();if(same)return}
-  if(!SR){alert("This browser can't dictate directly. Tap the box and use the microphone on your phone or Windows keyboard instead (Windows: press Win + H). That works without signal on most phones.");const ta=document.querySelector(`[data-p="${CSS.escape(path)}"]`);if(ta)ta.focus();return}
+  if(!SR){micHelp(path);return;alert("This browser can't dictate directly. Tap the box and use the microphone on your phone or Windows keyboard instead (Windows: press Win + H). That works without signal on most phones.");const ta=document.querySelector(`[data-p="${CSS.escape(path)}"]`);if(ta)ta.focus();return}
   rec=new SR();rec.continuous=true;rec.interimResults=true;rec.lang="en-US";recPath=path;recBtn=btn;btn.classList.add("rec");
   const ta=document.querySelector(`[data-p="${CSS.escape(path)}"]`);
   let base=ta.value&&!/\s$/.test(ta.value)?ta.value+" ":ta.value;
@@ -580,7 +685,7 @@ function toggleMic(path,btn){
   rec.onresult=ev=>{let fin="",inter="";for(let i=ev.resultIndex;i<ev.results.length;i++){const r=ev.results[i];if(r.isFinal)fin+=r[0].transcript;else inter+=r[0].transcript}
     if(fin){base+=fin.trim()+". ";}
     ta.value=base+inter;if(!isTmp){setP(P,path,ta.value.trim());persist()}};
-  rec.onerror=ev=>{if(ev.error==="network"||ev.error==="not-allowed"||ev.error==="service-not-allowed")alert(ev.error==="network"?"Dictation in this browser needs a signal. Use your phone keyboard's microphone instead, which works offline on most phones.":"Microphone access was blocked. Allow the microphone for this page, or use your keyboard's microphone.")};
+  rec.onerror=ev=>{if(ev.error==="network"||ev.error==="not-allowed"||ev.error==="service-not-allowed")micHelp(path)};
   rec.onend=()=>{btn.classList.remove("rec");const ta2=document.querySelector(`[data-p="${CSS.escape(path)}"]`);if(ta2&&!isTmp){setP(P,path,ta2.value.trim());persist()}rec=null;recPath=null;if(tab==="stands")refreshPanel()};
   try{rec.start()}catch(e){btn.classList.remove("rec");rec=null}
 }
