@@ -1,0 +1,924 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UVA Plan Data Entry</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2f6b3f">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#f6f5f0; --card:#ffffff; --ink:#1d241f; --muted:#5d6b61; --line:#d9ddd5;
+  --accent:#2f6b3f; --accent-ink:#ffffff; --soft:#e8f0e6; --warn:#a15c00; --warn-bg:#fff4e0;
+  --bad:#a12a2a; --bad-bg:#fbe9e9; --ok:#2f6b3f; --ok-bg:#e6f2e6; --input:#fff;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#141815; --card:#1d221e; --ink:#e7ebe6; --muted:#9aa79d; --line:#323a34;
+    --accent:#6fb27f; --accent-ink:#0e1a11; --soft:#243026; --warn:#f0b35a; --warn-bg:#3a2c14;
+    --bad:#f08a8a; --bad-bg:#3a1c1c; --ok:#8fd19e; --ok-bg:#1f3323; --input:#151916;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141815; --card:#1d221e; --ink:#e7ebe6; --muted:#9aa79d; --line:#323a34;
+  --accent:#6fb27f; --accent-ink:#0e1a11; --soft:#243026; --warn:#f0b35a; --warn-bg:#3a2c14;
+  --bad:#f08a8a; --bad-bg:#3a1c1c; --ok:#8fd19e; --ok-bg:#1f3323; --input:#151916;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{position:sticky;top:0;z-index:5;background:var(--accent);color:var(--accent-ink);padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+header h1{font-size:18px;margin:0 12px 0 0;font-weight:650}
+header select{max-width:260px}
+header .sp{flex:1}
+header .saved{font-size:13px;opacity:.85}
+nav{display:flex;gap:4px;overflow-x:auto;padding:8px 16px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:52px;z-index:4}
+nav button{white-space:nowrap;border:0;background:transparent;color:var(--muted);padding:8px 12px;border-radius:8px;font:inherit;font-size:15px;cursor:pointer}
+nav button.on{background:var(--soft);color:var(--ink);font-weight:600}
+main{max-width:980px;margin:0 auto;padding:16px}
+section.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+h2{font-size:18px;margin:0 0 12px}
+h3{font-size:16px;margin:18px 0 8px;color:var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.f{display:flex;flex-direction:column;gap:4px}
+.f.wide{grid-column:1/-1}
+label.l{font-size:13px;color:var(--muted);font-weight:600}
+.hint{font-size:12px;color:var(--muted)}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--input);border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%;min-height:42px}
+textarea{min-height:84px;resize:vertical;padding-right:46px}
+textarea.big{min-height:160px}
+.taw{position:relative}
+.mic{position:absolute;right:6px;top:6px;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--card);cursor:pointer;font-size:16px;line-height:1}
+.mic.rec{background:var(--bad);border-color:var(--bad);animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.55}}
+.chk-panel{border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:16px;background:var(--card)}
+.chk-panel.done{border-color:var(--ok);background:var(--ok-bg)}
+.chk-bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin:8px 0}
+.chk-bar i{display:block;height:100%;background:var(--accent)}
+.chk-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chk-list button{border:1px solid var(--warn);color:var(--warn);background:var(--warn-bg);border-radius:999px;padding:4px 10px;font:inherit;font-size:13px;cursor:pointer}
+.notes-card{border-left:4px solid var(--accent)}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
+.checks{display:flex;flex-wrap:wrap;gap:6px}
+.checks label{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:14px;background:var(--input)}
+.checks input{width:auto;min-height:0}
+.checks label.on{background:var(--soft);border-color:var(--accent)}
+button.b{font:inherit;font-size:15px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:8px 14px;cursor:pointer;min-height:40px}
+button.b.p{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+button.b.s{padding:4px 10px;min-height:32px;font-size:13px}
+button.b.x{color:var(--bad)}
+header button.b{background:rgba(255,255,255,.14);color:var(--accent-ink);border-color:rgba(255,255,255,.3)}
+.rep{display:flex;flex-direction:column;gap:8px}
+.row{display:grid;gap:8px;align-items:end;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--bg)}
+.row .del{align-self:center}
+.tot{font-size:14px;padding:6px 10px;border-radius:8px;display:inline-block;margin-top:6px}
+.tot.ok{background:var(--ok-bg);color:var(--ok)} .tot.warn{background:var(--warn-bg);color:var(--warn)} .tot.bad{background:var(--bad-bg);color:var(--bad)}
+.stand-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.stand-tabs button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:8px 12px;font:inherit;font-size:14px;cursor:pointer}
+.stand-tabs button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+details{border:1px solid var(--line);border-radius:10px;padding:0 12px;margin:10px 0;background:var(--card)}
+details>summary{cursor:pointer;padding:12px 0;font-weight:600}
+details[open]>summary{border-bottom:1px solid var(--line);margin-bottom:12px}
+details .inner{padding-bottom:12px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:600}
+td input{min-height:34px;padding:5px 6px}
+.issues li{margin:4px 0}
+.issues .bad{color:var(--bad)} .issues .warn{color:var(--warn)} .issues .ok{color:var(--ok)}
+.calc{background:var(--soft);border-radius:8px;padding:8px 10px;font-size:14px}
+.tw{overflow-x:auto}
+.muted{color:var(--muted)}
+.hide{display:none!important}
+@media (max-width:640px){ header{position:static} nav{top:0} .row{grid-template-columns:1fr 1fr!important} .row .f.wide2{grid-column:1/-1} }
+@media print{header,nav,button{display:none!important} section.card{break-inside:avoid;border:0}}
+</style>
+</head>
+<body>
+<header>
+  <h1>UVA Plan Data Entry</h1>
+  <select id="propPick" aria-label="Property"></select>
+  <button class="b s" id="newProp">+ New property</button>
+  <span class="sp"></span>
+  <span class="saved" id="saved">Saved on this device</span>
+</header>
+<nav id="nav"></nav>
+<main id="main"></main>
+
+<datalist id="dl-species">
+<option>Sugar maple</option><option>Red maple</option><option>Yellow birch</option><option>White birch</option><option>Gray birch</option><option>American beech</option><option>White ash</option><option>Brown ash</option><option>Black cherry</option><option>Hophornbeam</option><option>Basswood</option><option>Aspen</option><option>Bigtooth aspen</option><option>Red oak</option><option>Striped maple</option><option>Pin cherry</option><option>Butternut</option><option>Elm</option><option>White pine</option><option>Red pine</option><option>Hemlock</option><option>Red spruce</option><option>White spruce</option><option>Black spruce</option><option>Spruce</option><option>Balsam fir</option><option>Northern white cedar</option><option>Tamarack</option>
+</datalist>
+<datalist id="dl-trt">
+<option value="T">T – Thinning</option><option value="CTR">CTR – Crop Tree Release</option><option value="TSI">TSI – TSI / PCT / Weeding / Cleaning</option><option value="RT">RT – Row / Mechanical Thinning</option><option value="CC">CC – Clearcut</option><option value="PC">PC – Progressive Clearcut</option><option value="PCSW">PCSW – Preparatory Cut</option><option value="RSW">RSW – Shelterwood Establishment</option><option value="RGS">RGS – Group Shelterwood</option><option value="OSR">OSR – Overstory Removal</option><option value="STC">STC – Seed Tree Cut</option><option value="STS">STS – Single Tree Selection</option><option value="GS">GS – Group Selection</option><option value="SWR">SWR – Shelterwood with Reserves</option><option value="CCIS">CCIS – Continuous Cover Irreg. Shelterwood</option><option value="EGG">EGG – Expanding Gap / Group</option><option value="SC">SC – Salvage Cut</option><option value="NONE">NONE – No activity prescribed</option><option value="INV">INV – Invasive plant control</option><option value="AMP">AMP – AMP remediation</option>
+</datalist>
+<datalist id="dl-soils">
+<option>Dummerston</option><option>Colton-Duxbury complex</option><option>Vershire-Lombard complex</option><option>Cabot silt loam</option><option>Peru fine sandy loam</option><option>Tunbridge-Peru complex</option><option>Buckland fine sandy loam</option><option>Marlow</option><option>Berkshire</option><option>Lyman-Tunbridge complex</option><option>Monadnock</option><option>Pittstown</option><option>Glover</option><option>Woodstock</option>
+</datalist>
+
+<script>
+"use strict";
+/* ---------- storage ---------- */
+const LS_KEY="uva-plan-data-v1";
+function lsGet(){try{return JSON.parse(localStorage.getItem(LS_KEY))||null}catch(e){return null}}
+function lsSet(v){try{localStorage.setItem(LS_KEY,JSON.stringify(v));return true}catch(e){return false}}
+const uid=()=>Math.random().toString(36).slice(2,9);
+const thisYear=new Date().getFullYear();
+
+function blankStand(n){return {
+  id:uid(), number:String(n), name:"", acres:"", subcat:["PF"], community:"", standType:"", ageClasses:"", ageStructure:"",
+  soils:"", siteClass:"", siteBasis:"",
+  invMethod:"Point (variable radius)", invDate:"", points:"", baf:"10", dataSource:"hand",
+  qmd:"", baTotal:"", baMin:"", baMax:"", ags:"", ugs:"",
+  species:[{species:"",pct:""}], stocking:"",
+  diam:[6,8,10,12,14,16,18,20,22,"24+"].map(c=>({cls:String(c),tpa:"",ba:"",snags:""})),
+  regen:[{species:"",stems:"",size:""}], regenNarrative:"", regenBarriers:"",
+  invasives:[], invasiveLevel:"None",
+  browseIntensity:"", browsePattern:"",
+  cwm:{a:"",b:"",c:"",decay:""},
+  treatHistory:"", landHistory:"", health:"", ampStatus:"Meets standards", reserveCondition:"", esta:"", notes:"",
+  system:"", objective:"", standAge:"", rotationAge:"", diamObjectives:"", cuttingCycle:"", guide:"",
+  treatments:[], noActivity:false, noActivityReason:"", fieldNotes:""
+}}
+function blankTreatment(){return {id:uid(), year:"", code:"", season:"", pct:"100", description:"", residualSpecies:"", canopyPosition:"", residualBA:"", groupSize:"", retention:"", regenGoals:"", cohorts:"", legacy:"", targets:"", invasiveControl:"", ampRemediation:"", amendReason:""}}
+function blankProp(){return {
+  id:uid(), created:new Date().toISOString(), updated:null,
+  plan:{types:["Update"], startYear:String(thisYear+1), submissionDate:"", amendmentSummary:"", subcats:["Productive Forestland"]},
+  owners:[{name:"",address:"",phone:"",email:""}],
+  decisionMaker:"",
+  transfer:{prevOwner:"",transferDate:"",deedBookPage:"",prevSpan:"",notes:""},
+  property:{town:"",span:"",glAcres:"",enrolledAcres:"",orthophoto:"",bioRegion:"",location:"",objectives:"",description:"",wildlife:"",cultural:"",recreation:""},
+  soils:[{series:"",description:"",siteIndex:""}],
+  aquatic:{intermittent:{p:"",n:""},perennial:{p:"",n:""},ponds:{p:"",n:""},wet12:{p:"",n:""},wet3:{p:"",n:""}},
+  amp:{rating:"",summary:"",deficiencies:""},
+  rte:{none:true,items:[]},
+  acres:{fps:"",managed:"",siteIV:"",openIdle:"",sigSens:""},
+  stands:[blankStand(1)], fieldNotes:"",
+  packet:{map:"",notes:""},
+  map:{features:[],cruise:[],checkins:[],spacing:"",plots:""}
+}}
+
+let DB=lsGet()||{current:null,props:{}};
+if(!DB.current||!DB.props[DB.current]){const p=blankProp();DB.props[p.id]=p;DB.current=p.id}
+let P=DB.props[DB.current];
+let tab="property", standIdx=0, saveTimer=null;
+
+function persist(){
+  P.updated=new Date().toISOString();
+  if(typeof cloudSoon==="function")cloudSoon();
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>{const ok=lsSet(DB);document.getElementById("saved").textContent=ok?("Saved on this device "+new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})):"Not saving! Export a file to keep your work";},250);
+}
+
+/* ---------- path helpers ---------- */
+function getP(obj,path){return path.split(".").reduce((o,k)=>o==null?o:o[k],obj)}
+function setP(obj,path,v){const ks=path.split(".");let o=obj;for(let i=0;i<ks.length-1;i++)o=o[ks[i]];o[ks[ks.length-1]]=v}
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const num=v=>{const n=parseFloat(String(v).replace(/[^0-9.\-]/g,""));return isNaN(n)?null:n};
+const r1=n=>Math.round(n*10)/10;
+
+/* ---------- field rendering ---------- */
+// def: [path,label,type,opts]  type: t|n|ta|sel|chk|date|radio ; opts:{o:[],hint,wide,list,ph}
+function F(base,def){
+  const [path,label,type="t",o={}]=def;
+  const full=base?base+"."+path:path;
+  const val=getP(P,full);
+  const id="f_"+full.replace(/\./g,"_");
+  let inner="";
+  const ph=o.ph?` placeholder="${esc(o.ph)}"`:"";
+  const list=o.list?` list="${o.list}"`:"";
+  if(type==="ta") inner=`<div class="taw"><textarea id="${id}" data-p="${full}"${ph}${o.big?' class="big"':""}>${esc(val)}</textarea><button type="button" class="mic" data-mic="${full}" title="Dictate" aria-label="Dictate into this box">🎤</button></div>`;
+  else if(type==="sel") inner=`<select id="${id}" data-p="${full}"><option value=""></option>${o.o.map(x=>`<option${x===val?" selected":""}>${esc(x)}</option>`).join("")}</select>`;
+  else if(type==="chk"||type==="radio"){
+    const arr=type==="chk"?(Array.isArray(val)?val:(val?o.o:[])):[val];
+    inner=`<div class="checks" data-p="${full}" data-mode="${type}">${o.o.map(x=>{const on=arr.includes(x);return `<label class="${on?"on":""}"><input type="${type==="chk"?"checkbox":"radio"}" name="${id}" value="${esc(x)}"${on?" checked":""}>${esc(x)}</label>`}).join("")}</div>`;
+  }
+  else inner=`<input id="${id}" data-p="${full}" type="${type==="date"?"date":"text"}"${type==="n"?' inputmode="decimal"':""}${ph}${list} value="${esc(val)}">`;
+  return `<div class="f${o.wide?" wide":""}"><label class="l" for="${id}">${esc(label)}</label>${inner}${o.hint?`<span class="hint">${esc(o.hint)}</span>`:""}</div>`;
+}
+const G=(base,defs)=>`<div class="grid">${defs.map(d=>F(base,d)).join("")}</div>`;
+
+// repeater: arrPath, fields defs (relative), cols css, addLabel
+function R(arrPath,defs,cols,addLabel,opts={}){
+  const arr=getP(P,arrPath)||[];
+  return `<div class="rep">${arr.map((_,i)=>`<div class="row" style="grid-template-columns:${cols} auto">${defs.map(d=>F(arrPath+"."+i,d)).join("")}<button class="b s x del" data-del="${arrPath}" data-i="${i}" title="Remove">✕</button></div>`).join("")}
+  <div><button class="b s" data-add="${arrPath}" data-tpl="${esc(JSON.stringify(opts.tpl||{}))}">+ ${esc(addLabel)}</button></div></div>`;
+}
+
+/* ---------- sections ---------- */
+const TABS=[["property","Property & owners"],["resources","Soils & resources"],["water","Water, AMPs, RTE"],["stands","Stands"],["map","Field map"],["review","Schedule & checks"],["export","Save & send"]];
+
+function vProperty(){
+  const cloudTop=(typeof cloudPanel==="function")?cloudPanel(true):"";
+  const isT=(P.plan.types||[]).includes("Transfer"), isA=(P.plan.types||[]).includes("Amendment");
+  return `${cloudTop}<section class="card"><h2>Plan</h2>${G("plan",[
+    ["types","Submission type","chk",{o:["New Plan","Update","Amendment","Transfer","Addition","Withdrawal"],wide:true}],
+    ["subcats","Enrollment subcategories in this plan","chk",{o:["Productive Forestland","Sugarbush","Reserve Forestland","ESTA","Significant Wildlife Habitat"],wide:true}],
+    ["startYear","Plan period begins April 1 of","n",{hint:"Plan runs 10 years from this date"}],
+    ["submissionDate","Plan submission date","date"],
+  ])}
+  <div class="${isA?"":"hide"}">${G("plan",[["amendmentSummary","Amendment summary (what changed and why)","ta",{wide:true}]])}</div>
+  </section>
+  <section class="card"><h2>Landowner(s)</h2><p class="hint">List every owner exactly as on the deed / grand list. Two or more owners means CU-302 goes in a transfer packet.</p>
+  ${R("owners",[["name","Owner name","t"],["address","Mailing address","t"],["phone","Phone","t"],["email","Email","t"]],"1.3fr 1.6fr 1fr 1.2fr","Add owner")}
+  <div style="margin-top:12px">${G("",[["decisionMaker","Legal decision-maker / POA (if not the landowner)","t",{wide:true}]])}</div>
+  </section>
+  <section class="card ${isT?"":"hide"}"><h2>Transfer details</h2>${G("transfer",[
+    ["prevOwner","Previous owner(s)","t"],["transferDate","Date of transfer","date"],["deedBookPage","Deed book / page","t"],["prevSpan","Previous SPAN (if changed)","t"],["notes","Transfer notes (subdivision, acreage change, etc.)","ta",{wide:true}]])}
+  </section>
+  <section class="card"><h2>Parcel</h2>${G("property",[
+    ["town","Town(s)","t"],["span","SPAN(s)","t",{ph:"111-034-11565"}],["glAcres","Grand list acres","n"],["enrolledAcres","Enrolled acres","n"],
+    ["orthophoto","Orthophoto #","t"],["bioRegion","Biophysical region","sel",{o:["Champlain Valley","Champlain Hills","Northern Green Mountains","Southern Green Mountains","Northern Vermont Piedmont","Southern Vermont Piedmont","Northeastern Highlands","Taconic Mountains","Vermont Valley","Central Piedmont"]}],
+    ["location","Location / access","t",{wide:true,ph:"e.g., Frontage on Maple Lane; woods road from the north field"}],
+    ["objectives","Landowner objectives","ta",{wide:true}],["description","Property description / history","ta",{wide:true,hint:"Easements, leases, carbon or cost-share agreements, history of use"}]])}
+  </section>`;
+}
+function vResources(){
+  return `<section class="card"><h2>Soils</h2><p class="hint">Site index format you already use works fine, e.g. "SM 61, RM 60, BF 60".</p>
+  ${R("soils",[["series","Soil series","t",{list:"dl-soils"}],["siteIndex","Site index by species","t",{ph:"SM 61, RM 60"}],["description","Description / limitations","t"]],"1.2fr 1fr 2fr","Add soil")}
+  </section>
+  <section class="card notes-card"><h2>Property field notes: just talk</h2><p class="hint">Access, history, wildlife sign, cultural features, owner goals. Claude turns this into the property description and resource sections.</p>${G("",[["fieldNotes","","ta",{wide:true,big:true}]])}</section>
+  <section class="card"><h2>Other resources</h2>${G("property",[
+    ["wildlife","Wildlife habitat","ta",{wide:true}],["cultural","Cultural resources","ta",{wide:true,ph:"Stone walls, cellar holes, old roads..."}],["recreation","Recreation","ta",{wide:true}]])}
+  </section>`;
+}
+function vWater(){
+  const aq=[["intermittent","Intermittent streams"],["perennial","Perennial streams / rivers"],["ponds","Lakes / ponds"],["wet12","Class I / II wetlands (incl. vernal pools)"],["wet3","Class III wetlands"]];
+  return `<section class="card"><h2>Aquatic features</h2>
+  ${aq.map(([k,l])=>`<div class="row" style="grid-template-columns:1fr 2fr">${F("aquatic."+k,["p",l,"radio",{o:["Yes","No"]}])}${F("aquatic."+k,["n","Location / stands / notes","t"])}</div>`).join("")}
+  </section>
+  <section class="card"><h2>AMP implementation overview (whole parcel)</h2>${G("amp",[
+    ["rating","Parcel AMP rating","radio",{o:["Meets requirements","Partially meets","Does not meet"],wide:true}],
+    ["summary","Summary of conditions","ta",{wide:true,ph:"Roads, skid trails, crossings, landings observed"}],
+    ["deficiencies","Deficiencies & remediation (location, stands, year)","ta",{wide:true}]])}
+  </section>
+  <section class="card"><h2>RTE species & significant natural communities</h2>
+  ${G("rte",[["none","","chk",{o:["None known on this parcel"],wide:true}]]).replace('data-p="rte.none"','data-p="rte.none" data-bool="1"')}
+  <p class="hint">Threatened / endangered species by Heritage ID only, never by name.</p>
+  ${R("rte.items",[["feature","Heritage ID / community","t"],["rank","S-rank / EO rank","t"],["stands","Stand(s)","t"],["approach","Conservation approach","t"]],"1.3fr .8fr .7fr 2fr","Add feature")}
+  </section>`;
+}
+
+function standCalc(s){
+  const out={};
+  const tot=(s.species||[]).reduce((a,r)=>a+(num(r.pct)||0),0);
+  out.spTotal=r1(tot);
+  const named=(s.species||[]).filter(r=>r.species&&num(r.pct)!=null).sort((a,b)=>num(b.pct)-num(a.pct));
+  out.cover=named.map(r=>`${r.species} ${num(r.pct)}%`).join(", ");
+  const ba=num(s.baTotal), ags=num(s.ags), ugs=num(s.ugs);
+  if(ba!=null&&ags!=null&&ugs!=null) out.agsCheck=Math.abs(ags+ugs-ba)<=0.6;
+  if(ba!=null) out.spBA=named.map(r=>`${r.species} ${r1(ba*num(r.pct)/100)}`).join(", ");
+  return out;
+}
+function vStands(){
+  if(!P.stands.length) P.stands.push(blankStand(1));
+  if(standIdx>=P.stands.length) standIdx=P.stands.length-1;
+  const s=P.stands[standIdx], b="stands."+standIdx, c=standCalc(s);
+  const tabs=`<div class="stand-tabs">${P.stands.map((x,i)=>`<button data-stand="${i}" class="${i===standIdx?"on":""}">Stand ${esc(x.number||"?")}${x.acres?` · ${esc(x.acres)} ac`:""}${standChecks(x).missing.length?"":" ✓"}</button>`).join("")}<button data-standadd="1">+ Add stand</button><button data-standdup="1" title="Copy this stand">Copy stand</button></div>`;
+  const totCls=c.spTotal===100?"ok":(c.spTotal?"warn":"");
+  const nonForest=(s.subcat||[]).some(x=>x==="SIV"||x==="OI");
+  const ck=standChecks(s), pct=Math.round(100*ck.done/ck.total);
+  const panel=`<div class="chk-panel${ck.missing.length?"":" done"}" id="chkpanel"><b>${ck.missing.length?`Stand ${esc(s.number)} checklist: ${ck.done} of ${ck.total} done`:`✓ Stand ${esc(s.number)} has everything the plan needs`}</b>
+  <div class="chk-bar"><i style="width:${pct}%"></i></div>
+  ${ck.missing.length?`<div class="hint">Still needed (tap to jump):</div><div class="chk-list">${ck.missing.map(m=>`<button data-jump="${esc(m[1])}">${esc(m[0])}</button>`).join("")}</div>`:""}</div>`;
+  return `${tabs}${panel}
+  <section class="card notes-card"><h2>Field notes: just talk</h2><p class="hint">Tap 🎤 and describe the stand the way you would to a colleague: history, health, regen, browse, access, what you'd prescribe. Your phone keyboard's mic works too, even with no signal. Claude rewrites this into proper plan language and uses it to fill the narrative sections.</p>
+  ${G(b,[["fieldNotes","","ta",{wide:true,big:true,ph:"e.g. Fir's falling apart, lots of brown rot. Ash is all still alive but EAB is one town south. Regen's good, red maple and fir, some browse on the softwood..."}]])}</section>
+  <section class="card"><h2>Stand ${esc(s.number)}${s.name?": "+esc(s.name):""}</h2>${G(b,[
+    ["number","Stand #","t"],["name","Stand name / cover type","t"],["acres","Mapped acres","n"],
+    ["subcat","Enrollment subcategory","chk",{o:["PF","S","RF","SW","SP","NC","RTE","RA","VP","FW","OF","M","SIV","OI"],wide:true,hint:"PF productive · S sugarbush · RF reserve · SIV site IV · OI open/idle ag"}],
+    ["community","Natural community type","t",{ph:"Northern Hardwood Forest"}],["standType","SAF cover type","t",{ph:"Sugar maple–beech–yellow birch (25)"}],
+    ["ageStructure","Age class structure","t",{ph:"Sapling – large sawlog"}],["ageClasses","Age classes (cohorts)","sel",{o:["1","2","3","4+"]}],
+    ["soils","Dominant soil series","t",{list:"dl-soils"}],["siteClass","Site class","sel",{o:["I","II","III","IV"]}],["siteBasis","Site class basis","t",{ph:"Soil series / site index"}],
+  ])}</section>
+  <section class="card"><h2>Inventory</h2>${G(b,[
+    ["invMethod","Sampling method","sel",{o:["Point (variable radius)","Fixed-radius plot","Walk-through / ocular","Other"]}],["invDate","Sampling date","date"],["points","# points / plots","n"],["baf","BAF / plot size","t"],
+    ["dataSource","Where are the numbers coming from?","radio",{o:["hand","tally sheets"],wide:true,hint:"Pick 'tally sheets' if you'll scan and send them. Claude will calculate everything below and fill it in."}],
+  ]).replace(/>hand</,">I'll type them in<").replace(/>tally sheets</,">Sending scanned tally sheets<")}
+  ${G(b,[["qmd","Quadratic mean diameter (in.)","n"],["baTotal","Total BA (ft²/ac)","n"],["ags","Acceptable growing stock BA","n"],["ugs","Unacceptable growing stock BA","n"],["baMin","BA range: low point","n"],["baMax","BA range: high point","n"]])}
+  ${c.agsCheck===false?`<div class="tot bad">AGS + UGS doesn't equal total BA</div>`:""}
+  ${num(s.baTotal)!=null&&num(s.ags)!=null&&!s.ugs?`<div style="margin-top:6px"><button class="b s" data-fillugs="${standIdx}">Fill UGS = ${r1(num(s.baTotal)-num(s.ags))}</button></div>`:""}
+  </section>
+  <section class="card ${nonForest?"hide":""}"><h2>Species composition (% of basal area)</h2>
+  ${R(b+".species",[["species","Species","t",{list:"dl-species"}],["pct","% of BA","n"]],"2fr 1fr","Add species")}
+  <div class="tot ${totCls}">Total: ${c.spTotal||0}%${c.spTotal&&c.spTotal!==100?" (should be 100)":""}</div>
+  ${c.cover?`<p class="calc"><b>Cover type line:</b> ${esc(c.cover)}${c.spBA?`<br><b>BA by species (ft²/ac):</b> ${esc(c.spBA)}`:""}</p>`:""}
+  ${G(b,[["stocking","Stocking description","ta",{wide:true}]])}
+  <details><summary>Diameter distribution (optional, or Claude will build it from tally sheets)</summary><div class="inner tw"><table><thead><tr><th>DBH class</th><th>Trees/ac</th><th>BA/ac</th><th>Snags/ac</th></tr></thead><tbody>
+  ${s.diam.map((d,i)=>`<tr><td>${esc(d.cls)}"</td>${["tpa","ba","snags"].map(k=>`<td><input inputmode="decimal" data-p="${b}.diam.${i}.${k}" value="${esc(d[k])}"></td>`).join("")}</tr>`).join("")}
+  </tbody></table></div></details>
+  </section>
+  <section class="card"><h2>Regeneration, invasives, browse</h2>
+  <div class="${nonForest?"hide":""}"><h3>Regeneration</h3>
+  ${G(b,[["regenNarrative","Regeneration description","ta",{wide:true,ph:"Well stocked with advanced and sapling red maple, aspen, balsam fir..."}]])}
+  <details><summary>Regeneration counts by species (optional)</summary><div class="inner">${R(b+".regen",[["species","Species","t",{list:"dl-species"}],["stems","Stems / acre","n"],["size","Size class","sel",{o:["Seedling","Sapling","Seedling & sapling"]}]],"2fr 1fr 1fr","Add species")}</div></details>
+  ${G(b,[["regenBarriers","Barriers to regeneration","t",{wide:true,ph:"Browse, beech, fern, invasives, light, or 'none observed'"}]])}</div>
+  <h3>Introduced invasive plants</h3>
+  ${R(b+".invasives",[["species","Species","t",{ph:"Honeysuckle"}],["maturity","Maturity","sel",{o:["Seedling","Sapling","Mature","Mixed"]}],["distribution","Distribution","t",{ph:"Field edges, group openings"}],["infestation","Infestation","sel",{o:["Light <5%","Medium 5–20%","Moderate 21–50%","Heavy >50%"]}]],"1.2fr 1fr 1.6fr 1fr","Add invasive")}
+  ${G(b,[["invasiveLevel","Overall stand infestation","radio",{o:["None","Light","Medium","Moderate","Heavy"],wide:true}]])}
+  <div class="${nonForest?"hide":""}"><h3>Browse</h3>${G(b,[["browseIntensity","Intensity","radio",{o:["Low","Moderate","High"]}],["browsePattern","Pattern","radio",{o:["Distributed throughout","Localized"]}]])}</div>
+  <div class="${(s.subcat||[]).some(x=>x==="RF"||x==="OF")?"":"hide"}"><h3>Coarse woody material (pieces/ac, &gt;4 ft)</h3>${G(b+".cwm",[["a",'8–12"',"n"],["b",'14–18"',"n"],["c",'20"+',"n"],["decay","Decay classes present","t",{ph:"2, 3, 4"}]])}</div>
+  </section>
+  <section class="card"><h2>History, health, AMPs</h2>${G(b,[
+    ["treatHistory","UVA treatment history (prior plan prescribed vs. done)","ta",{wide:true}],["landHistory","Land use / stand history","ta",{wide:true}],
+    ["health","Forest health (insects, disease, damage)","ta",{wide:true}],
+    ["ampStatus","Stand AMP status","radio",{o:["Meets standards","Remediation required","Further on-site review needed (snow cover)"],wide:true}],
+    ["reserveCondition","Reserve forest condition (RF only)","ta",{wide:true}],["esta","ESTA / special feature documentation","ta",{wide:true}],["notes","Stand notes (access, landings, operability)","ta",{wide:true}]])}
+  </section>
+  <section class="card ${nonForest?"hide":""}"><h2>Management objectives</h2>${G(b,[
+    ["system","Long range silvicultural objective","sel",{o:["Uneven-aged","Even-aged","Two-aged","Multi-aged / irregular"]}],["cuttingCycle","Cutting cycle (yrs)","n"],["standAge","Present stand age (even-aged)","n"],["rotationAge","Rotation age (even-aged)","n"],
+    ["diamObjectives","Diameter objectives, principal species","t",{wide:true,ph:'White pine 24"+, sugar maple 20"'}],
+    ["objective","Management objective","ta",{wide:true}],["guide","Silvicultural guide / reference","t",{wide:true,ph:"USFS NE-603 (Leak, Yamasaki & Holleran 2014)"}]])}
+  </section>
+  <section class="card"><h2>Planned treatments</h2><p class="hint">The treatment schedule is built from these automatically.</p>
+  ${G(b,[["noActivity","","chk",{o:["No activity prescribed this plan period"],wide:true}]]).replace(`data-p="${b}.noActivity"`,`data-p="${b}.noActivity" data-bool="1"`)}
+  ${s.noActivity?G(b,[["noActivityReason","Reason (goes on the summary sheet)","t",{wide:true,ph:"Landowner wishes to preserve the aesthetic quality of this stand"}]]):""}
+  ${(s.treatments||[]).map((t,i)=>vTreatment(b+".treatments."+i,i)).join("")}
+  <button class="b" data-add="${b}.treatments" data-blanktrt="1">+ Add treatment</button>
+  </section>
+  <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">
+    <button class="b x" data-standdel="${standIdx}">Delete stand ${esc(s.number)}</button>
+    ${standIdx<P.stands.length-1?`<button class="b p" data-stand="${standIdx+1}">Next: Stand ${esc(P.stands[standIdx+1].number)} →</button>`:`<button class="b p" data-standadd="1">+ Add next stand</button>`}
+  </div>`;
+}
+function vTreatment(b,i){
+  return `<details open><summary>Treatment ${i+1}${getP(P,b+".code")?": "+esc(getP(P,b+".code")):""}${getP(P,b+".year")?" ("+esc(getP(P,b+".year"))+")":""}</summary><div class="inner">
+  ${G(b,[["year","Year","n"],["code","Treatment code","t",{list:"dl-trt"}],["season","Season","sel",{o:["Any","Spring","Summer","Fall","Winter","Frozen ground"]}],["pct","% of stand","n"],
+    ["description","Treatment description","ta",{wide:true}]])}
+  <details><summary>Prescription details (2026 Standards elements)</summary><div class="inner">${G(b,[
+    ["residualBA","Residual BA (outside groups)","n"],["groupSize","Group / patch size & range","t",{ph:"¼–½ acre"}],["cohorts","Age cohorts retained","sel",{o:["1","2","3","4+"]}],
+    ["residualSpecies","Residual species composition","t",{wide:true}],["canopyPosition","Canopy position of retained trees","t",{wide:true}],
+    ["retention","Retention pattern","t",{wide:true,ph:"Dispersed / aggregate + description"}],["regenGoals","Regeneration goals (top 3 species)","t",{wide:true}],
+    ["targets","Trees targeted for removal","t",{wide:true,ph:"Species, canopy position, stem quality, risk"}],["legacy","Legacy retention","t",{wide:true}],
+    ["invasiveControl","Invasive plant control plan","t",{wide:true}],["ampRemediation","AMP remediation plan","t",{wide:true}],["amendReason","Reason for amended prescription (amendments)","t",{wide:true}]])}</div></details>
+  <button class="b s x" data-del="${b.replace(/\.\d+$/,"")}" data-i="${i}">Remove treatment</button></div></details>`;
+}
+
+function standChecks(s){
+  const sc=s.subcat||[], has=a=>a.some(x=>sc.includes(x));
+  const nf=has(["SIV","OI"])&&!has(["PF","S","RF","SW","SP","NC","RTE","RA","VP","FW","OF"]);
+  const forest=!nf&&!has(["M"]);
+  const measured=has(["PF","S","RF","SW","OF"]);
+  const tally=s.dataSource==="tally sheets";
+  const v=k=>{const x=s[k];return x!=null&&String(x).trim()!==""};
+  const notes=String(s.fieldNotes||"").trim().length>40;
+  const L=[]; const add=(label,jump,ok)=>L.push([label,jump,!!ok]);
+  add("Acres","acres",v("acres"));
+  add("Subcategory","subcat",sc.length);
+  add("Natural community","community",v("community"));
+  add("Stand type","standType",v("standType")||v("name"));
+  add("Site class","siteClass",v("siteClass"));
+  if(nf){ add("Site class basis","siteBasis",v("siteBasis")); add("Description / current use","notes",v("notes")||notes); }
+  else{
+    add("Age class structure","ageStructure",v("ageStructure")||v("ageClasses"));
+    add("Soil series","soils",v("soils"));
+    add("Sampling date","invDate",v("invDate"));
+    add("# points / plots","points",v("points")||tally);
+    if(measured){
+      if(tally) add("Tally sheets (to send)","dataSource",true);
+      else{
+        add("QMD","qmd",v("qmd")); add("Total BA","baTotal",v("baTotal")); add("AGS BA","ags",v("ags")); add("UGS BA","ugs",v("ugs"));
+        add("BA range (low–high point)","baMin",v("baMin")&&v("baMax"));
+        add("Species % = 100","species.0.species",standCalc(s).spTotal===100);
+        const dd=(s.diam||[]).some(d=>num(d.tpa)!=null||num(d.ba)!=null);
+        add("Diameter distribution (or send tally)","diam.0.tpa",dd);
+        if(has(["RF","OF"])) add("Snags per acre","diam.0.snags",(s.diam||[]).some(d=>num(d.snags)!=null));
+      }
+    }
+    if(forest){
+      add("Regeneration","regenNarrative",v("regenNarrative")||(s.regen||[]).some(r=>r.species));
+      add("Barriers to regeneration","regenBarriers",v("regenBarriers"));
+      add("Browse intensity","browseIntensity",v("browseIntensity"));
+      add("Browse pattern","browsePattern",v("browsePattern"));
+    }
+  }
+  add("Invasive infestation level","invasiveLevel",v("invasiveLevel")&&(s.invasiveLevel==="None"||(s.invasives||[]).length));
+  add("Stand / land use history","landHistory",v("landHistory")||notes);
+  add("Forest health","health",v("health")||notes);
+  add("UVA treatment history (or N/A)","treatHistory",v("treatHistory"));
+  add("Stand AMP status","ampStatus",v("ampStatus"));
+  if(has(["RF"])){ add("Coarse woody material","cwm.a",s.cwm&&(s.cwm.a||s.cwm.b||s.cwm.c)); add("Reserve forest condition","reserveCondition",v("reserveCondition")); }
+  if(has(["NC","RTE","RA","VP","FW","OF","SP","SW"])) add("ESTA / special feature documentation","esta",v("esta"));
+  if(!nf){
+    add("Silvicultural objective","system",v("system"));
+    const even=s.system==="Even-aged"||s.system==="Two-aged";
+    if(s.system){ if(even){add("Present stand age","standAge",v("standAge"));add("Rotation age","rotationAge",v("rotationAge"))} else {add("Cutting cycle","cuttingCycle",v("cuttingCycle"));add("Diameter objectives","diamObjectives",v("diamObjectives"))} }
+    add("Management objective","objective",v("objective")||notes);
+    add("Treatment, or 'No activity'","noActivity",s.noActivity||(s.treatments||[]).length);
+    (s.treatments||[]).forEach((t,i)=>{
+      add(`Treatment ${i+1}: year & code`,`treatments.${i}.year`,t.year&&t.code);
+      if(t.code&&t.code!=="NONE"&&!["INV","AMP"].includes(t.code)) add(`Treatment ${i+1}: trees targeted for removal`,`treatments.${i}.targets`,t.targets||t.description);
+    });
+    if((s.treatments||[]).some(t=>t.code&&!["NONE","INV","AMP"].includes(t.code))) add("Silvicultural guide","guide",v("guide"));
+    if(has(["S"])) add("Sugarbush: tapping & 25% non-maple noted","objective",/tap/i.test((s.objective||"")+(s.fieldNotes||"")));
+  }
+  if(s.ampStatus==="Remediation required") add("AMP remediation plan","treatments",(s.treatments||[]).some(t=>t.ampRemediation||t.code==="AMP"));
+  const missing=L.filter(x=>!x[2]).map(x=>[x[0],x[1]]);
+  return {total:L.length,done:L.length-missing.length,missing};
+}
+function issues(){
+  const L=[];
+  const add=(lv,t)=>L.push([lv,t]);
+  if(!P.owners.some(o=>o.name)) add("bad","No owner name entered");
+  if(!P.property.span) add("bad","SPAN missing");
+  if(!P.property.town) add("bad","Town missing");
+  const enrolled=num(P.property.enrolledAcres);
+  const sum=P.stands.reduce((a,s)=>a+(num(s.acres)||0),0);
+  if(enrolled!=null){ if(Math.abs(sum-enrolled)>0.05) add("warn",`Stand acres total ${r1(sum*100)/100||0} but enrolled acres are ${enrolled}`); else add("ok",`Stand acres match enrolled acres (${enrolled})`); if(enrolled<25) add("bad","Enrolled acres under 25");}
+  else add("warn","Enrolled acres not entered, so stand total can't be checked");
+  if(!P.amp.rating) add("warn","Parcel AMP rating not chosen");
+  if((P.plan.types||[]).includes("Amendment")&&!P.plan.amendmentSummary) add("bad","Amendment summary needed on the cover page");
+  if((P.plan.types||[]).includes("Transfer")){ if(!P.transfer.prevOwner) add("warn","Transfer: previous owner not entered"); if(P.owners.filter(o=>o.name).length>1) add("ok","Transfer with more than one owner, so CU-302 goes in the packet"); }
+  P.stands.forEach(s=>{
+    const n="Stand "+(s.number||"?"); const c=standCalc(s); const ck=standChecks(s); if(ck.missing.length) add("warn",`${n}: ${ck.missing.length} item${ck.missing.length>1?"s":""} still needed (${ck.missing.slice(0,4).map(m=>m[0]).join(", ")}${ck.missing.length>4?"…":""})`); else add("ok",n+": complete"); const nf=(s.subcat||[]).some(x=>x==="SIV"||x==="OI");
+    if(!s.acres) add("bad",n+": acres missing");
+    if(s.dataSource==="tally sheets"){ add("warn",n+": waiting on scanned tally sheets"); }
+    else if(!nf){
+      if(c.spTotal&&c.spTotal!==100) add("warn",`${n}: species % totals ${c.spTotal}`);
+      if(c.agsCheck===false) add("bad",n+": AGS + UGS ≠ total BA");
+    }
+    if(s.invDate){const y=new Date(s.invDate);const age=(Date.now()-y)/31557600000;if(age>4) add("bad",`${n}: inventory is ${Math.floor(age)} years old (over 4 is generally not accepted)`)}
+  });
+  return L;
+}
+function schedule(){
+  const rows=[];
+  P.stands.forEach(s=>(s.treatments||[]).forEach(t=>rows.push({year:t.year,stand:s.number,code:t.code,desc:t.description})));
+  return rows.sort((a,b)=>(num(a.year)||9999)-(num(b.year)||9999));
+}
+function vReview(){
+  const sch=schedule(), iss=issues();
+  const sum=P.stands.reduce((a,s)=>a+(num(s.acres)||0),0);
+  return `<section class="card"><h2>Treatment schedule</h2>${sch.length?`<div class="tw"><table><thead><tr><th>Year</th><th>Stand</th><th>Code</th><th>Activity</th></tr></thead><tbody>${sch.map(r=>`<tr><td>${esc(r.year)}</td><td>${esc(r.stand)}</td><td>${esc(r.code)}</td><td>${esc(r.desc)}</td></tr>`).join("")}</tbody></table></div>`:`<p class="muted">No treatments entered, so the plan will read "No activity prescribed" for each stand.</p>`}</section>
+  <section class="card"><h2>Stand summary</h2><div class="tw"><table><thead><tr><th>Stand</th><th>Acres</th><th>Subcat.</th><th>Cover type</th><th>Site</th><th>QMD</th><th>BA</th><th>Data</th></tr></thead><tbody>
+  ${P.stands.map(s=>`<tr><td>${esc(s.number)}</td><td>${esc(s.acres)}</td><td>${esc((s.subcat||[]).join(", "))}</td><td>${esc(s.name||standCalc(s).cover.split(",").slice(0,3).join(","))}</td><td>${esc(s.siteClass)}</td><td>${esc(s.qmd)}</td><td>${esc(s.baTotal)}</td><td>${s.dataSource==="tally sheets"?"Tally sheets":"Entered"}</td></tr>`).join("")}
+  <tr><th>Total</th><th>${r1(sum*100)/100}</th><th colspan="6"></th></tr></tbody></table></div></section>
+  <section class="card"><h2>Optional acreage check</h2>${G("acres",[["fps","Forested productive soils (Site I–III)","n",{hint:"Min. 20"}],["managed","Acres actively managed","n"],["siteIV","Site IV acres","n"],["openIdle","Open/Idle ag acres","n",{hint:"≤ 25% of FPS"}],["sigSens","Significant & sensitive acres (Reserve)","n"]])}</section>
+  <section class="card"><h2>Checks before you send</h2><ul class="issues">${iss.map(([lv,t])=>`<li class="${lv}">${lv==="ok"?"✓":lv==="bad"?"✕":"!"} ${esc(t)}</li>`).join("")||'<li class="ok">✓ Nothing flagged</li>'}</ul></section>`;
+}
+function ownerSlug(){const n=(P.owners[0]&&P.owners[0].name)||"Property";return n.split(/[ ,]+/).filter(Boolean).slice(-1)[0].replace(/[^A-Za-z0-9_-]/g,"")||"Property"}
+function fileName(){const d=new Date();return `UVA_PlanData_${ownerSlug()}_${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}.json`}
+function vExport(){
+  const cloud=(typeof cloudPanel==="function")?cloudPanel(false):"";
+  const types=(P.plan.types||[]);
+  const tally=P.stands.filter(s=>s.dataSource==="tally sheets").map(s=>s.number);
+  return `${cloud}<section class="card"><h2>Save the data file</h2>
+  <p>Download one data file for this property. Save it into the owner's folder in <b>Management Plans</b>, then tell Claude "build the plan for ${esc(ownerSlug())}".</p>
+  ${canShareFiles()?`<p><button class="b p" id="doShare">Save to OneDrive / share…</button></p><p class="hint">Pick <b>OneDrive</b> in the share menu and save into Desktop › Management Plans › <b>${esc(ownerSlug())}</b>. Needs signal, so do it when you're back in service.${P.lastShared?` Last shared ${esc(new Date(P.lastShared).toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}))}.`:""}</p>`:""}
+  <p><button class="b${canShareFiles()?"":" p"}" id="doExport">Download ${esc(fileName())}</button> <label class="b" style="position:relative;display:inline-flex;align-items:center;overflow:hidden">Open a saved data file<input type="file" id="importFile" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;min-height:0"></label></p>
+  <p class="hint">This page also keeps your work on this device as you type, so you can close it in the field and come back. The downloaded file is the copy that counts.</p></section>
+  <section class="card"><h2>What to send Claude with it</h2><ul>
+  ${tally.length?`<li>Scanned tally sheets for stand${tally.length>1?"s":""} ${esc(tally.join(", "))} (PDF)</li>`:""}
+  <li>Updated UVA map + acreage chart (or say "map unchanged")</li>
+  ${types.includes("Transfer")?`<li>Transfer: new deed or the new owner's mailing info if it isn't entered here. Claude fills CU-301${P.owners.filter(o=>o.name).length>1?", CU-302":""} and the summary sheet.</li>`:""}
+  ${types.includes("Amendment")?"<li>Amendment: the prior approved plan, if it isn't already in the owner's folder</li>":""}
+  </ul>${G("packet",[["notes","Notes for Claude about this packet","ta",{wide:true}]])}</section>
+  <section class="card"><h2>Properties on this device</h2>
+  <p class="hint">Each property is kept separately. Use the menu at the top to switch.</p>
+  <button class="b x" id="delProp">Delete this property from this device</button></section>`;
+}
+
+/* ---------- render & events ---------- */
+function render(){
+  const pick=document.getElementById("propPick");
+  pick.innerHTML=Object.values(DB.props).sort((a,b)=>(b.updated||b.created).localeCompare(a.updated||a.created)).map(p=>`<option value="${p.id}"${p.id===P.id?" selected":""}>${esc((p.owners[0]&&p.owners[0].name)||"New property")}${p.property.town?" – "+esc(p.property.town):""}</option>`).join("");
+  document.getElementById("nav").innerHTML=TABS.map(([k,l])=>`<button data-tab="${k}" class="${k===tab?"on":""}">${l}</button>`).join("");
+  const v={property:vProperty,resources:vResources,water:vWater,stands:vStands,map:vMap,review:vReview,export:vExport}[tab]();
+  document.getElementById("main").innerHTML=v;
+  if(tab==="map")bindMap();
+}
+function rerenderKeepFocus(){const a=document.activeElement;const p=a&&a.dataset&&a.dataset.p;const st=a&&a.selectionStart;render();if(p){const e=document.querySelector(`[data-p="${CSS.escape(p)}"]`);if(e){e.focus();try{if(st!=null)e.setSelectionRange(st,st)}catch(_){}}}}
+
+document.addEventListener("input",e=>{
+  const t=e.target;
+  if(t.dataset.p&&!t.dataset.p.startsWith("__")&&(t.tagName==="INPUT"&&t.type!=="checkbox"&&t.type!=="radio"||t.tagName==="TEXTAREA"||t.tagName==="SELECT")){
+    setP(P,t.dataset.p,t.value);persist();
+    if(tab==="stands") refreshPanel();
+  }
+});
+document.addEventListener("change",e=>{
+  const t=e.target;
+  if(t.tagName==="SELECT"&&t.dataset.p){setP(P,t.dataset.p,t.value);persist();rerenderKeepFocus();return}
+  const grp=t.closest(".checks");
+  if(grp){
+    const p=grp.dataset.p;
+    if(grp.dataset.bool){setP(P,p,t.checked)}
+    else if(grp.dataset.mode==="radio"){setP(P,p,t.value)}
+    else{const vals=[...grp.querySelectorAll("input:checked")].map(x=>x.value);setP(P,p,vals)}
+    persist();render();return;
+  }
+  if(t.dataset.p&&/stands\.\d+\.(species|baTotal|ags|ugs|acres|number|name|treatments\.\d+\.(code|year))/.test(t.dataset.p)){setTimeout(rerenderKeepFocus,180)}
+});
+document.addEventListener("click",e=>{
+  const t=e.target.closest("button,[data-tab]");if(!t)return;
+  const d=t.dataset;
+  if(d.tab){tab=d.tab;render();window.scrollTo(0,0);return}
+  if(d.jump){jumpTo("stands."+standIdx+"."+d.jump);return}
+  if(d.mic){toggleMic(d.mic,t);return}
+  if(d.stand!=null){standIdx=+d.stand;tab="stands";render();window.scrollTo(0,0);return}
+  if(d.standadd){const n=P.stands.reduce((m,s)=>Math.max(m,parseInt(s.number)||0),0)+1;P.stands.push(blankStand(n));standIdx=P.stands.length-1;persist();render();window.scrollTo(0,0);return}
+  if(d.standdup){const c=JSON.parse(JSON.stringify(P.stands[standIdx]));c.id=uid();c.number=String(P.stands.reduce((m,s)=>Math.max(m,parseInt(s.number)||0),0)+1);c.acres="";P.stands.push(c);standIdx=P.stands.length-1;persist();render();window.scrollTo(0,0);return}
+  if(d.standdel!=null){if(P.stands.length<2){alert("A plan needs at least one stand.");return}if(confirm("Delete stand "+P.stands[+d.standdel].number+"?")){P.stands.splice(+d.standdel,1);standIdx=Math.max(0,standIdx-1);persist();render()}return}
+  if(d.fillugs!=null){const s=P.stands[+d.fillugs];s.ugs=String(r1(num(s.baTotal)-num(s.ags)));persist();render();return}
+  if(d.add){const arr=getP(P,d.add);if(d.blanktrt)arr.push(blankTreatment());else{const first=arr[0];const o={};if(first)Object.keys(first).forEach(k=>o[k]="");arr.push(Object.assign(o,JSON.parse(d.tpl||"{}")))}persist();render();return}
+  if(d.del){const arr=getP(P,d.del);arr.splice(+d.i,1);persist();render();return}
+  if(t.id==="newProp"){const p=blankProp();DB.props[p.id]=p;DB.current=p.id;P=p;tab="property";standIdx=0;persist();render();return}
+  if(t.id==="doExport"){exportFile();return}
+  if(t.id==="doShare"){exportFile("share");return}
+  if(t.id==="delProp"){if(!confirm("Delete this property from this device? Make sure you've downloaded the data file first."))return;delete DB.props[P.id];const ks=Object.keys(DB.props);if(!ks.length){const p=blankProp();DB.props[p.id]=p}DB.current=Object.keys(DB.props)[0];P=DB.props[DB.current];tab="property";persist();render();return}
+});
+document.getElementById("propPick").addEventListener("change",e=>{DB.current=e.target.value;P=DB.props[DB.current];standIdx=0;persist();render()});
+function exportFile(){
+  const out=JSON.parse(JSON.stringify(P));
+  out.format="uva-plan-data"; out.formatVersion=1; out.exported=new Date().toISOString();
+  out.computed={schedule:schedule(),stands:P.stands.map(s=>({number:s.number,...standCalc(s)})),issues:issues()};
+  const blob=new Blob([JSON.stringify(out,null,2)],{type:"application/json"});
+  if(arguments[0]==="share"){const f=new File([blob],fileName(),{type:"application/json"});
+    navigator.share({files:[f],title:fileName()}).then(()=>{P.lastShared=new Date().toISOString();persist();render()}).catch(e=>{if(e&&e.name!=="AbortError")alert("Couldn't share: "+e.message)});return}
+  if(DL){DL.save({filename:fileName(),data:blob}).catch(e=>{if(e&&e.code!=="declined")alert("Couldn't save the file here ("+(e.code||e)+").")});return}
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fileName();document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);
+}
+document.addEventListener("change",async e=>{if(e.target.id!=="importFile")return;
+  const f=e.target.files[0];if(!f)return;
+  try{const d=JSON.parse(await f.text());if(d.format!=="uva-plan-data")throw new Error("Not a plan data file");
+    delete d.computed;delete d.format;delete d.formatVersion;delete d.exported;
+    const base=blankProp();const merged=Object.assign(base,d);if(!merged.id)merged.id=uid();
+    if(DB.props[merged.id]&&!confirm("This property is already on this device. Replace it with the file?")){e.target.value="";return}
+    DB.props[merged.id]=merged;DB.current=merged.id;P=merged;tab="property";standIdx=0;persist();render();
+  }catch(err){alert("Couldn't open that file: "+err.message)}
+  e.target.value="";
+});
+function refreshPanel(){clearTimeout(refreshPanel.t);refreshPanel.t=setTimeout(()=>{const old=document.getElementById("chkpanel");if(!old||!P.stands[standIdx])return;const tmp=document.createElement("div");const s=P.stands[standIdx];
+  // rebuild just the panel
+  const html=vStands();tmp.innerHTML=html;const np=tmp.querySelector("#chkpanel");if(np)old.replaceWith(np);
+  const tabsOld=document.querySelector(".stand-tabs"),tabsNew=tmp.querySelector(".stand-tabs");if(tabsOld&&tabsNew)tabsOld.replaceWith(tabsNew);},400)}
+function jumpTo(path){setTimeout(()=>jumpNow(path),230)}
+function jumpNow(path){
+  const sel=`[data-p="${CSS.escape(path)}"]`;
+  let e=document.querySelector(sel);
+  if(!e){const alt=document.querySelector(`[data-p^="${CSS.escape(path)}"]`);e=alt}
+  if(!e)return;
+  let d=e.closest("details");while(d){d.open=true;d=d.parentElement.closest("details")}
+  e.scrollIntoView({behavior:"smooth",block:"center"});
+  const f=e.matches("input,textarea,select")?e:e.querySelector("input,textarea,select");if(f)f.focus({preventScroll:true});
+}
+/* ---------- dictation ---------- */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let rec=null, recPath=null, recBtn=null;
+function toggleMic(path,btn){
+  if(rec){const same=recPath===path;rec.stop();if(same)return}
+  if(!SR){alert("This browser can't dictate directly. Tap the box and use the microphone on your phone or Windows keyboard instead (Windows: press Win + H). That works without signal on most phones.");const ta=document.querySelector(`[data-p="${CSS.escape(path)}"]`);if(ta)ta.focus();return}
+  rec=new SR();rec.continuous=true;rec.interimResults=true;rec.lang="en-US";recPath=path;recBtn=btn;btn.classList.add("rec");
+  const ta=document.querySelector(`[data-p="${CSS.escape(path)}"]`);
+  let base=ta.value&&!/\s$/.test(ta.value)?ta.value+" ":ta.value;
+  const isTmp=path.startsWith("__");
+  rec.onresult=ev=>{let fin="",inter="";for(let i=ev.resultIndex;i<ev.results.length;i++){const r=ev.results[i];if(r.isFinal)fin+=r[0].transcript;else inter+=r[0].transcript}
+    if(fin){base+=fin.trim()+". ";}
+    ta.value=base+inter;if(!isTmp){setP(P,path,ta.value.trim());persist()}};
+  rec.onerror=ev=>{if(ev.error==="network"||ev.error==="not-allowed"||ev.error==="service-not-allowed")alert(ev.error==="network"?"Dictation in this browser needs a signal. Use your phone keyboard's microphone instead, which works offline on most phones.":"Microphone access was blocked. Allow the microphone for this page, or use your keyboard's microphone.")};
+  rec.onend=()=>{btn.classList.remove("rec");const ta2=document.querySelector(`[data-p="${CSS.escape(path)}"]`);if(ta2&&!isTmp){setP(P,path,ta2.value.trim());persist()}rec=null;recPath=null;if(tab==="stands")refreshPanel()};
+  try{rec.start()}catch(e){btn.classList.remove("rec");rec=null}
+}
+/* ---------- field map ---------- */
+const CHAIN=20.1168, ACRE=4046.856;
+let GPS=null, gpsWatch=null, follow=true, MV=null, mapMsg="";
+function M(){P.map=P.map||{features:[],cruise:[],checkins:[],spacing:"",plots:""};["features","cruise","checkins"].forEach(k=>P.map[k]=P.map[k]||[]);return P.map}
+function allPts(){const m=M();const a=[];m.features.forEach(f=>f.coords.forEach(c=>a.push(c)));m.cruise.forEach(c=>a.push([c.lat,c.lon]));m.checkins.forEach(c=>a.push([c.lat,c.lon]));if(GPS)a.push([GPS.lat,GPS.lon]);return a}
+function origin(){const a=allPts();if(!a.length)return null;let la=0,lo=0;a.forEach(p=>{la+=p[0];lo+=p[1]});return [la/a.length,lo/a.length]}
+function toXY(lat,lon,o){return [(lon-o[1])*Math.cos(o[0]*Math.PI/180)*111320, -(lat-o[0])*110574]}
+function toLL(x,y,o){return [o[0]-y/110574, o[1]+x/(Math.cos(o[0]*Math.PI/180)*111320)]}
+function dist(a,b){const o=a;const p=toXY(b[0],b[1],o);return Math.hypot(p[0],p[1])}
+function bearing(a,b){const p=toXY(b[0],b[1],a);let d=Math.atan2(p[0],-p[1])*180/Math.PI;return (d+360)%360}
+function inPoly(pt,poly){let ins=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const [yi,xi]=poly[i],[yj,xj]=poly[j];if(((yi>pt[0])!==(yj>pt[0]))&&(pt[1]<(xj-xi)*(pt[0]-yi)/(yj-yi)+xi))ins=!ins}return ins}
+function polyArea(poly){const o=poly[0];const xy=poly.map(c=>toXY(c[0],c[1],o));let a=0;for(let i=0;i<xy.length;i++){const p=xy[i],q=xy[(i+1)%xy.length];a+=p[0]*q[1]-q[0]*p[1]}return Math.abs(a/2)}
+function standAt(pt){const m=M();const f=m.features.find(f=>f.kind==="poly"&&inPoly(pt,f.coords));return f?f:null}
+function standLabel(f){if(!f)return "outside mapped stands";return f.stand?`Stand ${f.stand}`:(f.name||"unnamed area")}
+
+function parseGeo(text,name){
+  const out=[];const t=text.trim();
+  const guessStand=n=>{const m=String(n||"").match(/(?:stand|stnd|st)?\s*#?\s*(\d+[a-z]?)\b/i);return m?m[1]:""};
+  if(t.startsWith("{")){const g=JSON.parse(t);(g.features||[g]).forEach(f=>{const gm=f.geometry||f;const nm=(f.properties&&(f.properties.name||f.properties.Name||f.properties.STAND))||"";
+    const rings=gm.type==="Polygon"?[gm.coordinates[0]]:gm.type==="MultiPolygon"?gm.coordinates.map(p=>p[0]):null;
+    if(rings)rings.forEach(r=>out.push({kind:"poly",name:nm,stand:guessStand(nm),coords:r.map(c=>[c[1],c[0]])}));
+    else if(gm.type==="LineString")out.push({kind:"line",name:nm,coords:gm.coordinates.map(c=>[c[1],c[0]])});
+    else if(gm.type==="Point")out.push({kind:"pt",name:nm,coords:[[gm.coordinates[1],gm.coordinates[0]]]});});return out}
+  const x=new DOMParser().parseFromString(t,"application/xml");
+  const nameOf=el=>{const n=el.querySelector(":scope > name");return n?n.textContent.trim():""};
+  const cc=s=>s.trim().split(/\s+/).map(p=>p.split(",").map(Number)).filter(p=>p.length>=2&&!isNaN(p[0])).map(p=>[p[1],p[0]]);
+  if(x.querySelector("kml, Placemark")){
+    x.querySelectorAll("Placemark").forEach(pm=>{const nm=nameOf(pm);
+      pm.querySelectorAll("Polygon").forEach(pg=>{const c=pg.querySelector("outerBoundaryIs coordinates")||pg.querySelector("coordinates");if(c)out.push({kind:"poly",name:nm,stand:guessStand(nm),coords:cc(c.textContent)})});
+      pm.querySelectorAll("LineString").forEach(ls=>{const c=cc(ls.querySelector("coordinates").textContent);const closed=c.length>3&&dist(c[0],c[c.length-1])<15;out.push(closed?{kind:"poly",name:nm,stand:guessStand(nm),coords:c}:{kind:"line",name:nm,coords:c})});
+      pm.querySelectorAll("Point").forEach(p=>{const c=cc(p.querySelector("coordinates").textContent);if(c.length)out.push({kind:"pt",name:nm,coords:c})});
+    });return out}
+  if(x.querySelector("gpx")){
+    const seg=(els,nm)=>{const c=[...els].map(p=>[+p.getAttribute("lat"),+p.getAttribute("lon")]);if(c.length<2)return;const closed=c.length>3&&dist(c[0],c[c.length-1])<15;out.push(closed?{kind:"poly",name:nm,stand:guessStand(nm),coords:c}:{kind:"line",name:nm,coords:c})};
+    x.querySelectorAll("trk").forEach(tk=>{const nm=nameOf(tk);tk.querySelectorAll("trkseg").forEach(s=>seg(s.querySelectorAll("trkpt"),nm))});
+    x.querySelectorAll("rte").forEach(r=>seg(r.querySelectorAll("rtept"),nameOf(r)));
+    x.querySelectorAll("wpt").forEach(w=>out.push({kind:"pt",name:nameOf(w),coords:[[+w.getAttribute("lat"),+w.getAttribute("lon")]]}));
+    return out}
+  throw new Error("Couldn't read "+name+". Use KML, GPX or GeoJSON.");
+}
+
+function makeCruise(){
+  const m=M();let polys=m.features.filter(f=>f.kind==="poly");if(!polys.length)polys=m.features.filter(f=>f.kind==="parcel").map(f=>Object.assign({},f,{stand:"Parcel"}));if(!polys.length){alert("Pull the parcel or load stand lines first.");return}
+  const ch=num(m.spacing), n=num(m.plots);
+  if(!ch&&!n){alert("Enter a grid spacing in chains, or a number of plots per stand.");return}
+  if(m.cruise.some(c=>c.done)&&!confirm("Some plots are already marked done. Replace the whole cruise layout?"))return;
+  const pts=[];let k=1;
+  polys.forEach(f=>{
+    const o=f.coords[0];const xy=f.coords.map(c=>toXY(c[0],c[1],o));
+    const xs=xy.map(p=>p[0]),ys=xy.map(p=>p[1]);const minx=Math.min(...xs),maxx=Math.max(...xs),miny=Math.min(...ys),maxy=Math.max(...ys);
+    const area=polyArea(f.coords);let s=ch?ch*CHAIN:Math.sqrt(area/n);
+    const pin=(x,y)=>inPoly(toLL(x,y,o),f.coords);
+    let got=[];
+    for(let tries=0;tries<12;tries++){
+      got=[];const ox=minx+s*(0.25+0.5*Math.random()),oy=miny+s*(0.25+0.5*Math.random());
+      for(let y=oy;y<=maxy;y+=s)for(let x=ox;x<=maxx;x+=s)if(pin(x,y))got.push([x,y]);
+      if(ch||Math.abs(got.length-n)<=Math.max(1,n*0.15))break;
+      s*=Math.sqrt(got.length/(n||1))||0.8;
+    }
+    if(!got.length){const c=xy.reduce((a,p)=>[a[0]+p[0]/xy.length,a[1]+p[1]/xy.length],[0,0]);if(pin(c[0],c[1]))got.push(c)}
+    // serpentine order
+    got.sort((a,b)=>Math.round(a[1]/s)-Math.round(b[1]/s)||((Math.round(a[1]/s)%2?-1:1)*(a[0]-b[0])));
+    got.forEach(p=>{const ll=toLL(p[0],p[1],o);pts.push({id:uid(),n:k++,lat:ll[0],lon:ll[1],stand:f.stand||f.name||"",done:false})});
+  });
+  m.cruise=pts;persist();mapMsg=`Laid out ${pts.length} plots.`;render();
+}
+function gpxOut(){
+  const m=M();const e=s=>String(s).replace(/[<&>]/g,c=>({"<":"&lt;","&":"&amp;",">":"&gt;"}[c]));
+  let g=`<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="UVA Plan Data Entry" xmlns="http://www.topografix.com/GPX/1/1">\n`;
+  m.cruise.forEach(c=>g+=`<wpt lat="${c.lat.toFixed(6)}" lon="${c.lon.toFixed(6)}"><name>P${c.n}</name><desc>${e("Stand "+c.stand)}</desc><sym>Flag</sym></wpt>\n`);
+  m.checkins.forEach(c=>g+=`<wpt lat="${c.lat.toFixed(6)}" lon="${c.lon.toFixed(6)}"><name>${e(c.label||"Note")}</name><desc>${e(c.note)}</desc><time>${c.time}</time></wpt>\n`);
+  m.features.filter(f=>f.kind!=="pt").forEach(f=>{g+=`<trk><name>${e(f.stand?"Stand "+f.stand:f.name)}</name><trkseg>${f.coords.map(c=>`<trkpt lat="${c[0].toFixed(6)}" lon="${c[1].toFixed(6)}"/>`).join("")}</trkseg></trk>\n`});
+  g+="</gpx>";
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([g],{type:"application/gpx+xml"}));a.download=`Cruise_${ownerSlug()}.gpx`;document.body.appendChild(a);a.click();setTimeout(()=>a.remove(),500);
+}
+function startGPS(){
+  if(!navigator.geolocation){alert("This browser can't read GPS.");return}
+  if(gpsWatch!=null){navigator.geolocation.clearWatch(gpsWatch);gpsWatch=null;GPS=null;render();return}
+  gpsWatch=navigator.geolocation.watchPosition(p=>{GPS={lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy,t:Date.now()};if(tab==="map")drawMap(true)},
+    err=>{alert("Couldn't get your location: "+err.message+". Check that location is allowed for this page.");gpsWatch=null},{enableHighAccuracy:true,maximumAge:3000,timeout:30000});
+  render();
+}
+function nextPlot(){const m=M();if(!GPS)return null;const here=[GPS.lat,GPS.lon];let best=null;m.cruise.filter(c=>!c.done).forEach(c=>{const d=dist(here,[c.lat,c.lon]);if(!best||d<best.d)best={c,d}});return best}
+function fmtDist(mtr){const ft=mtr*3.28084;return ft<1000?`${Math.round(ft)} ft (${(mtr/CHAIN).toFixed(1)} ch)`:`${(ft/5280).toFixed(2)} mi`}
+function compass(d){return ["N","NE","E","SE","S","SW","W","NW"][Math.round(d/45)%8]}
+
+function vMap(){
+  const m=M();const polys=m.features.filter(f=>f.kind==="poly");
+  const np=nextPlot();const here=GPS?standAt([GPS.lat,GPS.lon]):null;
+  const done=m.cruise.filter(c=>c.done).length;
+  return `<section class="card"><h2>Field map</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+   <button class="b ${gpsWatch!=null?"":"p"}" data-map="gps">${gpsWatch!=null?"Stop GPS":"📍 Show where I am"}</button>
+   <button class="b p" data-map="checkin" ${GPS?"":"disabled title='Turn on GPS first'"}>✎ Check in here</button>
+   <button class="b" data-map="fit">Fit map</button>
+   <span style="display:inline-flex;gap:4px;align-items:center;margin-left:auto"><span class="hint">Background:</span>${Object.entries({none:"None",aerial:"Aerial",topo:"Topo"}).map(([k,l])=>`<button class="b s${basemap===k?" p":""}" data-map2="bm:${k}">${l}</button>`).join("")}</span>
+   <button class="b" data-map="follow">${follow?"Following me ✓":"Follow me"}</button>
+  </div>
+  <div id="gpsline" class="calc">${gpsLine(here,np)}</div>
+  <div id="mapwrap" style="position:relative;margin-top:10px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg);touch-action:none">
+   <svg id="mapsvg" style="display:block;width:100%;height:min(62vh,560px)"></svg>
+   <div style="position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:6px"><button class="b s" data-map="zin">＋</button><button class="b s" data-map="zout">－</button></div>
+  </div>
+  <div id="checkinBox" class="hide" style="margin-top:10px"></div>
+  ${mapMsg?`<p class="tot ok">${esc(mapMsg)}</p>`:""}
+  </section>
+  <section class="card"><h2>Parcel from the state parcel map</h2>
+  <p class="hint">Uses the SPAN on the Property tab to pull the parcel outline (red dashed line), owner, mailing address, town and grand list acres from Vermont's statewide parcel data. It only fills blanks and never overwrites what you typed. This needs internet, so do it at the office before the cruise.</p>
+  <p><button class="b p" data-map2="parcel">Pull parcel for SPAN ${esc(P.property.span||"(none entered)")}</button> <span id="parcelStatus" class="hint"></span></p>
+  ${basemap!=="none"?`<p><button class="b" data-map2="offline">Save ${BASEMAPS[basemap].name.toLowerCase()} for offline</button> <span id="offlineStatus" class="hint">Downloads the background around the parcel so it shows in the woods with no signal.</span></p>`:`<p class="hint">Pick Aerial or Topo above to get a background map, then you can save it for offline use.</p>`}
+  </section>
+  <section class="card"><h2>Old map for reference</h2>
+  <p class="hint">Load an old plan map (JPG or PNG) from the owner's folder to look at side by side. It isn't tied to GPS.</p>
+  <label class="b" style="position:relative;display:inline-flex;align-items:center;overflow:hidden">${M().refImage?"Replace":"Load"} old map image<input type="file" id="refFile" accept="image/*" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;min-height:0"></label> ${M().refImage?`<button class="b s x" data-map2="refclear">Remove</button><div style="margin-top:10px;overflow:auto;max-height:70vh;border:1px solid var(--line);border-radius:8px"><img src="${M().refImage.data}" alt="${esc(M().refImage.name)}" style="width:100%;display:block"></div>`:""}
+  </section>
+  <section class="card"><h2>Stand boundaries</h2>
+  <p class="hint">In Terrain Navigator, export the property's stand polygons as <b>KML</b> or <b>GPX</b> (File → Export), then load the file here. GeoJSON works too. The map, GPS and check-ins all work with no signal.</p>
+  <label class="b" style="position:relative;display:inline-flex;align-items:center;overflow:hidden">Load boundary file<input type="file" id="geoFile" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;min-height:0"></label> ${m.features.length?`<button class="b x s" data-map="clear">Remove all boundaries</button>`:""}
+  ${polys.length?`<div class="tw" style="margin-top:10px"><table><thead><tr><th>Shape</th><th>Map acres</th><th>Stand #</th></tr></thead><tbody>${m.features.map((f,i)=>f.kind!=="poly"?"":`<tr><td>${esc(f.name||"(unnamed)")}</td><td>${r1(polyArea(f.coords)/ACRE)}</td><td><input style="max-width:90px" data-mapstand="${i}" value="${esc(f.stand||"")}"></td></tr>`).join("")}</tbody></table></div><p class="hint">Map acres are approximate, so use your mapping software's acres in the plan.</p>`:""}
+  </section>
+  <section class="card"><h2>Cruise layout</h2>
+  <div class="grid">${F("map",["spacing","Grid spacing (chains)","n",{ph:"e.g. 4"}])}${F("map",["plots","…or plots per stand","n",{ph:"e.g. 10"}])}</div>
+  <p style="margin-top:10px"><button class="b p" data-map="cruise">Lay out plots</button> ${m.cruise.length?`<button class="b" data-map="gpx">Download GPX for GPS unit</button> <button class="b x s" data-map="clearcruise">Clear plots</button>`:""}</p>
+  ${m.cruise.length?`<p>${done} of ${m.cruise.length} plots done. Tap a plot on the map to mark it done.</p><div class="tw"><table><thead><tr><th>Stand</th><th>Plots</th><th>Done</th></tr></thead><tbody>${[...new Set(m.cruise.map(c=>c.stand))].map(st=>{const a=m.cruise.filter(c=>c.stand===st);return `<tr><td>${esc(st)}</td><td>${a.length}</td><td>${a.filter(c=>c.done).length}</td></tr>`}).join("")}</tbody></table></div>`:""}
+  <p class="hint">Or just tell Claude "prep a cruise for [owner]" and I'll lay it out from your boundaries and leave it ready in this tab.</p>
+  </section>
+  <section class="card"><h2>Check-ins (${m.checkins.length})</h2>
+  ${m.checkins.length?`<div class="tw"><table><thead><tr><th>Time</th><th>Where</th><th>Note</th><th></th></tr></thead><tbody>${m.checkins.slice().reverse().map(c=>`<tr><td>${esc(new Date(c.time).toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}))}</td><td>${esc(c.label)}<br><span class="hint">${c.lat.toFixed(5)}, ${c.lon.toFixed(5)}</span></td><td>${esc(c.note)}${c.plot?`<br><span class="hint">Plot ${esc(c.plot)}</span>`:""}</td><td><button class="b s x" data-delcheck="${c.id}">✕</button></td></tr>`).join("")}</tbody></table></div>`:`<p class="muted">Check-ins drop a pin with your note, and the note goes into that stand's field notes automatically.</p>`}
+  </section>`;
+}
+function gpsLine(here,np){
+  if(gpsWatch==null)return "GPS is off. Tap “Show where I am.”";
+  if(!GPS)return "Waiting for a GPS fix…";
+  let s=`You're in <b>${esc(standLabel(here))}</b> · ±${Math.round(GPS.acc*3.28)} ft`;
+  if(np)s+=` · Next plot <b>P${np.c.n}</b>: ${fmtDist(np.d)} ${compass(bearing([GPS.lat,GPS.lon],[np.c.lat,np.c.lon]))} (${Math.round(bearing([GPS.lat,GPS.lon],[np.c.lat,np.c.lon]))}°)`;
+  return s;
+}
+function drawMap(fromGps){
+  const svg=document.getElementById("mapsvg");if(!svg)return;
+  const m=M();const o=MV&&MV.o||origin();
+  if(!o){svg.innerHTML=`<text x="50%" y="50%" text-anchor="middle" fill="currentColor" style="font-size:14px;fill:var(--muted)">Load a boundary file or turn on GPS</text>`;return}
+  const W=svg.clientWidth,H=svg.clientHeight;
+  if(!MV||!MV.o){MV={o,cx:0,cy:0,sc:1};fitMap(W,H)}
+  if(fromGps&&follow&&GPS){const p=toXY(GPS.lat,GPS.lon,MV.o);MV.cx=p[0];MV.cy=p[1]}
+  const T=(lat,lon)=>{const p=toXY(lat,lon,MV.o);return [(p[0]-MV.cx)*MV.sc+W/2,(p[1]-MV.cy)*MV.sc+H/2]};
+  const pal=["#2f6b3f","#7a5c1e","#2b5d8a","#8a2b5d","#5d8a2b","#5d2b8a","#8a5d2b","#2b8a7a"];
+  let h=basemapSVG(W,H,T);
+  m.features.forEach((f,i)=>{const pts=f.coords.map(c=>T(c[0],c[1]).map(v=>v.toFixed(1)).join(",")).join(" ");
+    if(f.kind==="parcel"){h+=`<polygon points="${pts}" fill="none" stroke="#c0392b" stroke-width="3" stroke-dasharray="10 5"/>`}
+    else if(f.kind==="poly"){const col=pal[i%pal.length];h+=`<polygon points="${pts}" fill="${col}" fill-opacity=".12" stroke="${col}" stroke-width="2"/>`;
+      const c=f.coords.reduce((a,p)=>[a[0]+p[0]/f.coords.length,a[1]+p[1]/f.coords.length],[0,0]);const q=T(c[0],c[1]);
+      h+=`<text x="${q[0]}" y="${q[1]}" text-anchor="middle" style="font:600 14px system-ui;fill:${col};paint-order:stroke;stroke:var(--bg);stroke-width:4px">${esc(f.stand?"Stand "+f.stand:f.name)}</text>`}
+    else if(f.kind==="line")h+=`<polyline points="${pts}" fill="none" stroke="var(--muted)" stroke-width="2" stroke-dasharray="6 4"/>`;
+    else{const q=T(f.coords[0][0],f.coords[0][1]);h+=`<circle cx="${q[0]}" cy="${q[1]}" r="4" fill="var(--muted)"/><text x="${q[0]+6}" y="${q[1]-6}" style="font:12px system-ui;fill:var(--muted)">${esc(f.name)}</text>`}
+  });
+  const np=nextPlot();
+  m.cruise.forEach(c=>{const q=T(c.lat,c.lon);const nx=np&&np.c.id===c.id;h+=`<g data-plot="${c.id}" style="cursor:pointer"><circle cx="${q[0]}" cy="${q[1]}" r="${nx?10:8}" fill="${c.done?"var(--muted)":nx?"#d97706":"var(--card)"}" stroke="${c.done?"var(--muted)":"#d97706"}" stroke-width="2"/><text x="${q[0]}" y="${q[1]+4}" text-anchor="middle" style="font:600 10px system-ui;fill:${c.done||nx?"#fff":"var(--ink)"};pointer-events:none">${c.n}</text></g>`});
+  m.checkins.forEach(c=>{const q=T(c.lat,c.lon);h+=`<g><path d="M${q[0]} ${q[1]} l-7 -14 a8 8 0 1 1 14 0 z" fill="#2b5d8a" stroke="#fff" stroke-width="1.5"/></g>`});
+  if(GPS){const q=T(GPS.lat,GPS.lon);h+=`<circle cx="${q[0]}" cy="${q[1]}" r="${Math.max(8,GPS.acc*MV.sc)}" fill="#1a73e8" fill-opacity=".15"/><circle cx="${q[0]}" cy="${q[1]}" r="7" fill="#1a73e8" stroke="#fff" stroke-width="2.5"/>`}
+  // scale bar
+  const target=100/MV.sc;const nice=[1,2,5,10,20,50,100,200,500].map(v=>v*CHAIN).reduce((best,v)=>Math.abs(v-target)<Math.abs(best-target)?v:best,CHAIN);
+  const len=nice*MV.sc;h+=`<g transform="translate(12,${H-16})"><rect x="-4" y="-16" width="${len+70}" height="24" rx="4" fill="var(--card)" opacity=".85"/><line x1="0" y1="0" x2="${len}" y2="0" stroke="var(--ink)" stroke-width="3"/><text x="${len+6}" y="4" style="font:12px system-ui;fill:var(--ink)">${Math.round(nice/CHAIN)} ch</text></g>`;
+  h+=`<text x="${W-12}" y="${H-12}" text-anchor="end" style="font:600 12px system-ui;fill:var(--muted)">N ↑</text>`;
+  svg.innerHTML=h;
+  const gl=document.getElementById("gpsline");if(gl)gl.innerHTML=gpsLine(GPS?standAt([GPS.lat,GPS.lon]):null,np);
+  const cb=document.querySelector('[data-map="checkin"]');if(cb)cb.disabled=!GPS;
+}
+function fitMap(W,H){const a=allPts();if(!a.length)return;const xy=a.map(p=>toXY(p[0],p[1],MV.o));const xs=xy.map(p=>p[0]),ys=xy.map(p=>p[1]);
+  const w=Math.max(...xs)-Math.min(...xs)||200,h=Math.max(...ys)-Math.min(...ys)||200;MV.cx=(Math.max(...xs)+Math.min(...xs))/2;MV.cy=(Math.max(...ys)+Math.min(...ys))/2;MV.sc=Math.min(W/w,H/h)*0.88}
+function bindMap(){
+  const svg=document.getElementById("mapsvg");if(!svg)return;drawMap(false);
+  let drag=null;const pts=new Map();
+  svg.addEventListener("pointerdown",e=>{svg.setPointerCapture(e.pointerId);pts.set(e.pointerId,[e.clientX,e.clientY]);drag={x:e.clientX,y:e.clientY,cx:MV&&MV.cx,cy:MV&&MV.cy,moved:false,d0:null,sc0:MV&&MV.sc};if(pts.size===2){const [a,b]=[...pts.values()];drag.d0=Math.hypot(a[0]-b[0],a[1]-b[1])}});
+  svg.addEventListener("pointermove",e=>{if(!drag||!MV)return;pts.set(e.pointerId,[e.clientX,e.clientY]);
+    if(pts.size===2&&drag.d0){const [a,b]=[...pts.values()];MV.sc=drag.sc0*Math.hypot(a[0]-b[0],a[1]-b[1])/drag.d0;drag.moved=true;follow=false;drawMap(false);return}
+    const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.abs(dx)+Math.abs(dy)>4){drag.moved=true;follow=false}
+    if(drag.moved){MV.cx=drag.cx-dx/MV.sc;MV.cy=drag.cy-dy/MV.sc;drawMap(false)}});
+  const up=e=>{pts.delete(e.pointerId);if(drag&&!drag.moved){const g=e.target.closest&&e.target.closest("[data-plot]");if(g){const c=M().cruise.find(c=>c.id===g.dataset.plot);if(c){c.done=!c.done;persist();drawMap(false)}}}if(!pts.size)drag=null};
+  svg.addEventListener("pointerup",up);svg.addEventListener("pointercancel",up);
+  svg.addEventListener("wheel",e=>{if(!MV)return;e.preventDefault();MV.sc*=e.deltaY<0?1.2:1/1.2;drawMap(false)},{passive:false});
+}
+function openCheckin(){
+  if(!GPS)return;const here=standAt([GPS.lat,GPS.lon]);const np=nextPlot();
+  const box=document.getElementById("checkinBox");box.classList.remove("hide");
+  box.innerHTML=`<div class="row" style="grid-template-columns:1fr"><div class="f"><label class="l">Note at ${esc(standLabel(here))} (${GPS.lat.toFixed(5)}, ${GPS.lon.toFixed(5)})</label>
+  <div class="taw"><textarea id="ciNote" data-p="__ci" placeholder="Wolf tree, seep, stone wall corner, AMP problem at crossing, honeysuckle patch..."></textarea><button type="button" class="mic" data-mic="__ci">🎤</button></div></div>
+  ${np&&np.d<30?`<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="ciPlot" style="width:auto;min-height:0"${np.d<12?" checked":""}> This is plot P${np.c.n}, so mark it done</label>`:""}
+  <div style="display:flex;gap:8px"><button class="b p" data-map="savecheck">Save check-in</button><button class="b" data-map="cancelcheck">Cancel</button></div></div>`;
+  document.getElementById("ciNote").focus();
+}
+function saveCheckin(){
+  const note=(document.getElementById("ciNote").value||"").trim();const here=standAt([GPS.lat,GPS.lon]);const np=nextPlot();
+  const plotBox=document.getElementById("ciPlot");const plot=plotBox&&plotBox.checked&&np?np.c:null;if(plot)plot.done=true;
+  const c={id:uid(),time:new Date().toISOString(),lat:GPS.lat,lon:GPS.lon,acc:GPS.acc,stand:here&&here.stand||"",label:standLabel(here),note,plot:plot?("P"+plot.n):""};
+  M().checkins.push(c);
+  if(note){const st=P.stands.find(s=>here&&here.stand&&String(s.number)===String(here.stand));const line=`[${c.plot?c.plot+" ":""}${c.lat.toFixed(5)}, ${c.lon.toFixed(5)}] ${note}`;
+    if(st){st.fieldNotes=(st.fieldNotes?st.fieldNotes.trim()+"\n":"")+line}else{P.fieldNotes=(P.fieldNotes?P.fieldNotes.trim()+"\n":"")+line}}
+  persist();mapMsg=note?`Saved to ${here&&here.stand&&P.stands.some(s=>String(s.number)===String(here.stand))?"Stand "+here.stand+" field notes":"property field notes"}.`:"Pin saved.";render();
+}
+document.addEventListener("click",e=>{
+  const t=e.target.closest("[data-map],[data-delcheck]");if(!t)return;const a=t.dataset.map;
+  if(t.dataset.delcheck){const m=M();m.checkins=m.checkins.filter(c=>c.id!==t.dataset.delcheck);persist();render();return}
+  if(a==="gps")startGPS();
+  else if(a==="checkin")openCheckin();
+  else if(a==="savecheck")saveCheckin();
+  else if(a==="cancelcheck"){document.getElementById("checkinBox").classList.add("hide")}
+  else if(a==="fit"){MV=null;drawMap(false)}
+  else if(a==="follow"){follow=!follow;render()}
+  else if(a==="zin"&&MV){MV.sc*=1.4;drawMap(false)}
+  else if(a==="zout"&&MV){MV.sc/=1.4;drawMap(false)}
+  else if(a==="load"){document.getElementById("geoFile").click()}
+  else if(a==="clear"){if(confirm("Remove all boundaries from this property?")){M().features=[];MV=null;persist();render()}}
+  else if(a==="cruise")makeCruise();
+  else if(a==="clearcruise"){if(confirm("Clear all cruise plots?")){M().cruise=[];persist();render()}}
+  else if(a==="gpx")gpxOut();
+});
+document.addEventListener("input",e=>{if(e.target.dataset.mapstand!=null){M().features[+e.target.dataset.mapstand].stand=e.target.value.trim();persist()}});
+document.addEventListener("change",e=>{if(e.target.dataset.mapstand!=null&&tab==="map")drawMap(false)});
+document.addEventListener("change",async e=>{if(e.target.id!=="geoFile")return;const f=e.target.files[0];if(!f)return;try{const feats=parseGeo(await f.text(),f.name);if(!feats.length)throw new Error("No shapes found in "+f.name);M().features.push(...feats);MV=null;persist();mapMsg=`Loaded ${feats.length} shape${feats.length>1?"s":""} from ${f.name}.`;render()}catch(err){alert(err.message)}e.target.value=""});
+
+/* ---------- state parcel lookup + basemap ---------- */
+const PARCEL_URL="https://services1.arcgis.com/BkFxaEFNwHqX3tAw/arcgis/rest/services/FS_VCGI_OPENDATA_Cadastral_VTPARCELS_poly_standardized_parcels_SP_v1/FeatureServer/0/query";
+const BASEMAPS={none:null,
+  aerial:{name:"Aerial",url:(z,x,y)=>`https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`,max:19},
+  topo:{name:"USGS topo",url:(z,x,y)=>`https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/${z}/${y}/${x}`,max:16}};
+let basemap="none"; try{basemap=localStorage.getItem("uva-basemap")||"none"}catch(e){}
+const tileMem=new Map();
+let idb=null;
+function openIDB(){return new Promise(res=>{if(idb)return res(idb);try{const r=indexedDB.open("uva-tiles",1);r.onupgradeneeded=()=>r.result.createObjectStore("t");r.onsuccess=()=>{idb=r.result;res(idb)};r.onerror=()=>res(null)}catch(e){res(null)}})}
+async function idbGet(k){const d=await openIDB();if(!d)return null;return new Promise(res=>{try{const q=d.transaction("t").objectStore("t").get(k);q.onsuccess=()=>res(q.result||null);q.onerror=()=>res(null)}catch(e){res(null)}})}
+async function idbPut(k,v){const d=await openIDB();if(!d)return;return new Promise(res=>{try{const tx=d.transaction("t","readwrite");tx.objectStore("t").put(v,k);tx.oncomplete=()=>res();tx.onerror=()=>res()}catch(e){res()}})}
+function lon2t(lon,z){return (lon+180)/360*2**z}
+function lat2t(lat,z){const r=lat*Math.PI/180;return (1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*2**z}
+function t2lon(x,z){return x/2**z*360-180}
+function t2lat(y,z){const n=Math.PI-2*Math.PI*y/2**z;return 180/Math.PI*Math.atan(0.5*(Math.exp(n)-Math.exp(-n)))}
+function tileZoom(){const mpp=1/MV.sc;const z=Math.round(Math.log2(156543.03*Math.cos(MV.o[0]*Math.PI/180)/mpp));return Math.max(8,Math.min(BASEMAPS[basemap].max,z))}
+function viewBoundsLL(W,H){const a=toLL(MV.cx-W/2/MV.sc,MV.cy-H/2/MV.sc,MV.o),b=toLL(MV.cx+W/2/MV.sc,MV.cy+H/2/MV.sc,MV.o);return {n:a[0],s:b[0],w:a[1],e:b[1]}}
+function tilesFor(bb,z){const x0=Math.floor(lon2t(bb.w,z)),x1=Math.floor(lon2t(bb.e,z)),y0=Math.floor(lat2t(bb.n,z)),y1=Math.floor(lat2t(bb.s,z));const out=[];for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++)out.push([z,x,y]);return out}
+function tileSrc(url){if(tileMem.has(url))return tileMem.get(url);tileMem.set(url,url);idbGet(url).then(d=>{if(d){tileMem.set(url,d);const im=document.querySelector(`image[data-u="${CSS.escape(url)}"]`);if(im)im.setAttribute("href",d)}});return url}
+function basemapSVG(W,H,T){
+  const bm=BASEMAPS[basemap];if(!bm||!MV)return "";const z=tileZoom();const bb=viewBoundsLL(W,H);const ts=tilesFor(bb,z);if(ts.length>160)return "";
+  return ts.map(([z,x,y])=>{const u=bm.url(z,x,y);const p0=T(t2lat(y,z),t2lon(x,z)),p1=T(t2lat(y+1,z),t2lon(x+1,z));
+    return `<image data-u="${esc(u)}" href="${esc(tileSrc(u))}" x="${p0[0].toFixed(1)}" y="${p0[1].toFixed(1)}" width="${(p1[0]-p0[0]+0.6).toFixed(1)}" height="${(p1[1]-p0[1]+0.6).toFixed(1)}" preserveAspectRatio="none" onerror="this.remove()"/>`}).join("");
+}
+async function saveOffline(){
+  const bm=BASEMAPS[basemap];if(!bm){alert("Pick Aerial or USGS topo first.");return}
+  const m=M();const pts=m.features.flatMap(f=>f.coords);if(!pts.length){alert("Load the parcel or stand lines first so I know what area to save.");return}
+  const lats=pts.map(p=>p[0]),lons=pts.map(p=>p[1]);const pad=0.004;const bb={n:Math.max(...lats)+pad,s:Math.min(...lats)-pad,w:Math.min(...lons)-pad,e:Math.max(...lons)+pad};
+  let list=[];for(let z=13;z<=bm.max;z++){const t=tilesFor(bb,z);if(list.length+t.length>1500)break;list=list.concat(t)}
+  const st=document.getElementById("offlineStatus");let ok=0,fail=0;
+  for(let i=0;i<list.length;i+=6){await Promise.all(list.slice(i,i+6).map(async([z,x,y])=>{const u=bm.url(z,x,y);if(await idbGet(u)){ok++;return}
+    try{const r=await fetch(u);if(!r.ok)throw 0;const b=await r.blob();const d=await new Promise(res=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.readAsDataURL(b)});await idbPut(u,d);tileMem.set(u,d);ok++}catch(e){fail++}}));
+    if(st)st.textContent=`Saving ${bm.name} for offline… ${ok+fail} of ${list.length}`}
+  if(st)st.textContent=fail&&!ok?`Couldn't download the ${bm.name} map. Check your internet connection.`:`Saved ${ok} ${bm.name} map tiles for offline use${fail?` (${fail} missed)`:""}. They'll show with no signal.`;
+}
+async function pullParcel(){
+  const raw=String(P.property.span||"").trim();if(!raw){alert("Enter the SPAN on the Property tab first.");tab="property";render();return}
+  const spans=raw.split(/[;,\s]+/).filter(Boolean);const vals=new Set();spans.forEach(s=>{const d=s.replace(/\D/g,"");vals.add(s);if(d.length===11){vals.add(d);vals.add(`${d.slice(0,3)}-${d.slice(3,6)}-${d.slice(6)}`)}});
+  const where="SPAN IN ("+[...vals].map(v=>`'${v.replace(/'/g,"")}'`).join(",")+")";
+  const st=document.getElementById("parcelStatus");if(st)st.textContent="Looking up the parcel…";
+  try{
+    const r=await fetch(PARCEL_URL+"?"+new URLSearchParams({where,outFields:"*",outSR:"4326",f:"geojson"}));
+    if(!r.ok)throw new Error("the state parcel service answered "+r.status);
+    const g=await r.json();if(g.error)throw new Error(g.error.message||"service error");
+    const fs=(g.features||[]).filter(f=>f.geometry);if(!fs.length)throw new Error("No parcel found for SPAN "+raw+". Check the number against the grand list.");
+    const m=M();m.features=m.features.filter(f=>f.kind!=="parcel");
+    const info=[];
+    fs.forEach(f=>{const gm=f.geometry;const rings=gm.type==="Polygon"?[gm.coordinates[0]]:gm.type==="MultiPolygon"?gm.coordinates.map(p=>p[0]):[];
+      const pr=f.properties||{};const pick=(...ks)=>{for(const k of ks){for(const kk of Object.keys(pr))if(kk.toUpperCase()===k&&pr[kk]!=null&&String(pr[kk]).trim()!=="")return String(pr[kk]).trim()}return ""};
+      rings.forEach(rg=>m.features.push({kind:"parcel",name:"Parcel "+pick("SPAN"),coords:rg.map(c=>[c[1],c[0]])}));
+      info.push({span:pick("SPAN"),owner:[pick("OWNER1"),pick("OWNER2")].filter(Boolean).join(" & "),addr:[pick("ADDRGL1"),pick("ADDRGL2"),[pick("CITYGL"),pick("STGL"),pick("ZIPGL")].filter(Boolean).join(" ")].filter(Boolean).join(", "),town:pick("TOWN","TNAME","TOWNNAME"),acres:pick("ACRESGL","GLACRES","ACRES"),loc:pick("E911ADDR","ADDRGL")});});
+    const p=P.property, o=P.owners[0]||(P.owners[0]={name:"",address:"",phone:"",email:""});const i0=info[0];const filled=[];
+    if(!p.town&&i0.town){p.town=i0.town.replace(/\b\w/g,c=>c.toUpperCase()).replace(/\B\w/g,c=>c.toLowerCase());filled.push("town")}
+    if(!p.glAcres&&i0.acres){p.glAcres=String(info.reduce((a,x)=>a+(num(x.acres)||0),0));filled.push("grand list acres")}
+    if(!o.name&&i0.owner){o.name=i0.owner;filled.push("owner")}
+    if(!o.address&&i0.addr){o.address=i0.addr;filled.push("mailing address")}
+    if(!p.location&&i0.loc){p.location=i0.loc;filled.push("location")}
+    P.parcelInfo=info;MV=null;persist();
+    mapMsg=`Parcel loaded from the state parcel map (${info.map(x=>`${x.span}: ${x.owner||"owner n/a"}, ${x.acres||"?"} GL ac`).join("; ")}).${filled.length?" Filled in: "+filled.join(", ")+".":""} Parcel lines are approximate, so check them against the deed.`;
+    render();
+  }catch(e){if(st)st.textContent="Couldn't get the parcel: "+(e.message||e)+(String(e).includes("Failed to fetch")?" (no internet?)":"")}
+}
+document.addEventListener("click",e=>{const t=e.target.closest("[data-map2]");if(!t)return;const a=t.dataset.map2;
+  if(a==="parcel")pullParcel();else if(a==="offline")saveOffline();
+  else if(a.startsWith("bm:")){basemap=a.slice(3);try{localStorage.setItem("uva-basemap",basemap)}catch(_){}render()}
+  else if(a==="refimg")document.getElementById("refFile").click();
+  else if(a==="refclear"){M().refImage=null;persist();render()}});
+document.addEventListener("change",async e=>{if(e.target.id!=="refFile")return;const f=e.target.files[0];if(!f)return;const img=new Image();const url=URL.createObjectURL(f);img.onload=()=>{const c=document.createElement("canvas");const k=Math.min(1,1600/Math.max(img.width,img.height));c.width=img.width*k;c.height=img.height*k;c.getContext("2d").drawImage(img,0,0,c.width,c.height);M().refImage={name:f.name,data:c.toDataURL("image/jpeg",0.8)};persist();render()};img.src=url;e.target.value=""});
+
+/* ---------- cloud sync (Claude-hosted copy only) ---------- */
+let CDB=null, cloudList=null, cloudStatus="", cloudBusy=false, cloudAgain=false, cloudTimer=null;
+function cloudBody(p){const c=JSON.parse(JSON.stringify(p));if(c.map)delete c.map.refImage;const o=c.owners&&c.owners[0];
+  return {name:(o&&o.name)||"New property",town:(c.property&&c.property.town)||"",span:(c.property&&c.property.span)||"",updated:c.updated||new Date().toISOString(),json:JSON.stringify(c)}}
+async function cloudPush(){
+  if(!CDB)return; if(cloudBusy){cloudAgain=true;return}
+  cloudBusy=true;
+  try{await CDB.doc("properties/"+P.id).set(cloudBody(P));cloudStatus="Synced to Claude "+new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});}
+  catch(e){cloudStatus="Not synced yet (no signal?). It'll retry on your next change.";}
+  cloudBusy=false; const el=document.getElementById("cloudStatus"); if(el)el.textContent=cloudStatus;
+  if(cloudAgain){cloudAgain=false;cloudPush()}
+}
+function cloudSoon(){if(!CDB)return;clearTimeout(cloudTimer);cloudTimer=setTimeout(cloudPush,4000)}
+async function cloudRefresh(){
+  if(!CDB)return;
+  try{const snap=await CDB.collection("properties").get();cloudList=snap.docs.filter(d=>d.exists).map(d=>({id:d.id,...d.data()}));}catch(e){cloudList=cloudList||[]}
+  if(tab==="export"||tab==="property")rerenderKeepFocus();
+}
+async function cloudOpen(id){
+  const it=(cloudList||[]).find(x=>x.id===id);if(!it)return;
+  let p;try{p=JSON.parse(it.json)}catch(e){alert("That copy couldn't be read.");return}
+  const local=DB.props[p.id];
+  if(local&&local.updated&&p.updated&&local.updated>p.updated&&!confirm("This phone has newer changes to "+it.name+" than the copy from Claude. Replace them anyway?"))return;
+  const keepImg=local&&local.map&&local.map.refImage;
+  const merged=Object.assign(blankProp(),p);if(keepImg){merged.map=merged.map||{};merged.map.refImage=keepImg}
+  DB.props[merged.id]=merged;DB.current=merged.id;P=merged;tab="stands";standIdx=0;persist();render();window.scrollTo(0,0);
+}
+function cloudPanel(compact){
+  if(!CDB)return "";
+  const list=(cloudList||[]).filter(x=>!compact||!DB.props[x.id]).sort((a,b)=>String(b.updated).localeCompare(String(a.updated)));
+  if(compact&&!list.length)return "";
+  return `<section class="card notes-card"><h2>${compact?"Ready to open from Claude":"Synced with Claude"}</h2>
+  ${compact?"":`<p class="hint">Everything you enter syncs here automatically whenever you have signal, and Claude can read it directly, so there's no file to download or send. <span id="cloudStatus">${esc(cloudStatus)}</span></p>`}
+  ${cloudList==null?`<p class="muted">Loading…</p>`:list.length?`<div class="tw"><table><tbody>${list.map(x=>`<tr><td><b>${esc(x.name)}</b>${x.town?" – "+esc(x.town):""}<br><span class="hint">${esc(x.span)}${x.updated?" · updated "+esc(new Date(x.updated).toLocaleDateString()):""}</span></td><td style="text-align:right"><button class="b s${DB.props[x.id]?"":" p"}" data-cloudopen="${esc(x.id)}">${DB.props[x.id]?(x.id===P.id?"Reload":"Open"):"Open"}</button></td></tr>`).join("")}</tbody></table></div>`:`<p class="muted">Nothing synced yet.</p>`}
+  </section>`;
+}
+document.addEventListener("click",e=>{const t=e.target.closest("[data-cloudopen]");if(t)cloudOpen(t.dataset.cloudopen)});
+if(window.claude&&window.claude.use){window.claude.use("db").then(d=>{if(!d)return;CDB=d;cloudRefresh()}).catch(()=>{})}
+
+function canShareFiles(){try{return !!(navigator.canShare&&navigator.canShare({files:[new File(["x"],"x.json",{type:"application/json"})]}))}catch(e){return false}}
+/* offline app: service worker + durable storage */
+if("serviceWorker" in navigator&&(location.protocol==="https:"||location.hostname==="localhost")){
+  navigator.serviceWorker.register("sw.js").then(reg=>{
+    reg.addEventListener("updatefound",()=>{const w=reg.installing;w&&w.addEventListener("statechange",()=>{if(w.state==="installed"&&navigator.serviceWorker.controller){showUpdate()}})});
+  }).catch(()=>{});
+}
+function showUpdate(){const b=document.createElement("div");b.style.cssText="position:fixed;left:12px;right:12px;bottom:12px;z-index:50;background:var(--accent);color:var(--accent-ink);padding:12px 14px;border-radius:10px;display:flex;gap:10px;align-items:center;box-shadow:0 4px 16px rgba(0,0,0,.3)";b.innerHTML='<span style="flex:1">A new version of the app is ready.</span><button class="b s" style="background:#fff;color:#000">Reload</button>';b.querySelector("button").onclick=()=>location.reload();document.body.appendChild(b)}
+try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
+let DL=null;
+if(window.claude&&window.claude.use){window.claude.use("downloads").then(d=>{DL=d}).catch(()=>{})}
+render();
+</script>
+</body>
+</html>
