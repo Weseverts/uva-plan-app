@@ -109,6 +109,7 @@ td input{min-height:34px;padding:5px 6px}
 <datalist id="dl-species">
 <option>Sugar maple</option><option>Red maple</option><option>Yellow birch</option><option>White birch</option><option>Gray birch</option><option>American beech</option><option>White ash</option><option>Brown ash</option><option>Black cherry</option><option>Hophornbeam</option><option>Basswood</option><option>Aspen</option><option>Bigtooth aspen</option><option>Red oak</option><option>Striped maple</option><option>Pin cherry</option><option>Butternut</option><option>Elm</option><option>White pine</option><option>Red pine</option><option>Hemlock</option><option>Red spruce</option><option>White spruce</option><option>Black spruce</option><option>Spruce</option><option>Balsam fir</option><option>Northern white cedar</option><option>Tamarack</option>
 </datalist>
+<datalist id="dl-nc"><option>Northern Hardwood Forest</option><option>Rich Northern Hardwood Forest</option><option>Mesic Maple-Ash-Hickory-Oak Forest</option><option>Hemlock Forest</option><option>Hemlock-Northern Hardwood Forest</option><option>White Pine-Northern Hardwood Forest</option><option>Red Spruce-Northern Hardwood Forest</option><option>Red Spruce-Hemlock Forest</option><option>Lowland Spruce-Fir Forest</option><option>Montane Spruce-Fir Forest</option><option>Montane Yellow Birch-Red Spruce Forest</option><option>Dry Oak Forest</option><option>Dry Oak Woodland</option><option>Pine-Oak-Heath Sandplain Forest</option><option>Northern White Cedar Swamp</option><option>Red Maple-Black Ash Swamp</option><option>Spruce-Fir-Tamarack Swamp</option><option>Black Spruce Swamp</option><option>Hemlock Swamp</option><option>Red Maple-Northern White Cedar Swamp</option><option>Seeps</option><option>Vernal Pool</option><option>Successional / old field forest</option></datalist>
 <datalist id="dl-trt">
 <option value="T">T – Thinning</option><option value="CTR">CTR – Crop Tree Release</option><option value="TSI">TSI – TSI / PCT / Weeding / Cleaning</option><option value="RT">RT – Row / Mechanical Thinning</option><option value="CC">CC – Clearcut</option><option value="PC">PC – Progressive Clearcut</option><option value="PCSW">PCSW – Preparatory Cut</option><option value="RSW">RSW – Shelterwood Establishment</option><option value="RGS">RGS – Group Shelterwood</option><option value="OSR">OSR – Overstory Removal</option><option value="STC">STC – Seed Tree Cut</option><option value="STS">STS – Single Tree Selection</option><option value="GS">GS – Group Selection</option><option value="SWR">SWR – Shelterwood with Reserves</option><option value="CCIS">CCIS – Continuous Cover Irreg. Shelterwood</option><option value="EGG">EGG – Expanding Gap / Group</option><option value="SC">SC – Salvage Cut</option><option value="NONE">NONE – No activity prescribed</option><option value="INV">INV – Invasive plant control</option><option value="AMP">AMP – AMP remediation</option>
 </datalist>
@@ -287,7 +288,7 @@ function vStands(){
   <section class="card"><h2>Stand ${esc(s.number)}${s.name?": "+esc(s.name):""}</h2>${G(b,[
     ["number","Stand #","t"],["name","Stand name / cover type","t"],["acres","Mapped acres","n"],
     ["subcat","Enrollment subcategory","chk",{o:["PF","S","RF","SW","SP","NC","RTE","RA","VP","FW","OF","M","SIV","OI"],wide:true,hint:"PF productive · S sugarbush · RF reserve · SIV site IV · OI open/idle ag"}],
-    ["community","Natural community type","t",{ph:"Northern Hardwood Forest"}],["standType","SAF cover type","t",{ph:"Sugar maple–beech–yellow birch (25)"}],
+    ["community","Natural community type","t",{ph:"Northern Hardwood Forest",list:"dl-nc"}],["sRank","Conservation rank (state)","sel",{o:["S1","S2","S3","S4","S5"]}],["eoRank","Occurrence rank","sel",{o:["A","B","C","D"]}],["standType","Cover type (NE aerial photo guide)","sel",{o:["BS – Black spruce","BS/T – Black spruce–tamarack","RS – Red spruce","RS/BF – Red spruce–balsam fir","RP – Red pine","WP – Eastern white pine","H – Eastern hemlock","WP/H – White pine–hemlock","PP – Pitch pine","AWC – Atlantic white-cedar","Asp – Aspen","WB – White birch","SM – Sugar maple","RM – Red maple","RO – Northern red oak","B/SM – Beech–sugar maple","SM/B/YB – Sugar maple–beech–yellow birch","WO/BO/RO – White oak–black oak–northern red oak","WP/RO/RM – White pine–red oak–red maple","RS/SM/B – Red spruce–sugar maple–beech","WB/RS/BF – White birch–red spruce–balsam fir","Other – Other (describe in stand notes)"]}],
     ["ageStructure","Age class structure","t",{ph:"Sapling – large sawlog"}],["ageClasses","Age classes (cohorts)","sel",{o:["1","2","3","4+"]}],
     ["soils","Dominant soil series","t",{list:"dl-soils"}],["siteClass","Site class","sel",{o:["I","II","III","IV"]}],["siteBasis","Site class basis","t",{ph:"Soil series / site index"}],
   ])}</section>
@@ -300,6 +301,10 @@ function vStands(){
   ${num(s.baTotal)!=null&&num(s.ags)!=null&&!s.ugs?`<div style="margin-top:6px"><button class="b s" data-fillugs="${standIdx}">Fill UGS = ${r1(num(s.baTotal)-num(s.ags))}</button></div>`:""}
   </section>
   <section class="card ${nonForest?"hide":""}"><h2>Species composition (% of basal area)</h2>
+  <div class="f wide"><label class="l" for="f_sp_said">Say it or type it</label><div class="taw"><textarea id="f_sp_said" data-p="${b}.speciesSaid" placeholder="e.g. sugar maple forty, red maple twenty five, beech fifteen, hemlock ten, yellow birch ten">${esc(s.speciesSaid||"")}</textarea><button type="button" class="mic" data-mic="${b}.speciesSaid" title="Dictate" aria-label="Dictate species">🎤</button></div>
+  <span class="hint">Tap the box and use your keyboard's mic (works with no signal), then Check. Common names, codes (SM, RM, YB…) and words like "soft maple" or "popple" all work.</span>
+  <div><button class="b s p" data-spcheck="1" style="margin-top:6px">Check & fill table</button></div><div id="spPrev">${spPreviewHTML()}</div></div>
+  <h3>Species table</h3>
   ${R(b+".species",[["species","Species","t",{list:"dl-species"}],["pct","% of BA","n"]],"2fr 1fr","Add species")}
   <div class="tot ${totCls}">Total: ${c.spTotal||0}%${c.spTotal&&c.spTotal!==100?" (should be 100)":""}</div>
   ${c.cover?`<p class="calc"><b>Cover type line:</b> ${esc(c.cover)}${c.spBA?`<br><b>BA by species (ft²/ac):</b> ${esc(c.spBA)}`:""}</p>`:""}
@@ -515,7 +520,7 @@ document.addEventListener("click",e=>{
   if(d.tab){tab=d.tab;render();window.scrollTo(0,0);return}
   if(d.jump){jumpTo("stands."+standIdx+"."+d.jump);return}
   if(d.mic){toggleMic(d.mic,t);return}
-  if(d.stand!=null){standIdx=+d.stand;tab="stands";render();window.scrollTo(0,0);return}
+  if(d.stand!=null){standIdx=+d.stand;if(typeof spPreview!=="undefined")spPreview=null;tab="stands";render();window.scrollTo(0,0);return}
   if(d.standadd){const n=P.stands.reduce((m,s)=>Math.max(m,parseInt(s.number)||0),0)+1;P.stands.push(blankStand(n));standIdx=P.stands.length-1;persist();render();window.scrollTo(0,0);return}
   if(d.standdup){const c=JSON.parse(JSON.stringify(P.stands[standIdx]));c.id=uid();c.number=String(P.stands.reduce((m,s)=>Math.max(m,parseInt(s.number)||0),0)+1);c.acres="";P.stands.push(c);standIdx=P.stands.length-1;persist();render();window.scrollTo(0,0);return}
   if(d.standdel!=null){if(P.stands.length<2){alert("A plan needs at least one stand.");return}if(confirm("Delete stand "+P.stands[+d.standdel].number+"?")){P.stands.splice(+d.standdel,1);standIdx=Math.max(0,standIdx-1);persist();render()}return}
@@ -916,6 +921,52 @@ if("serviceWorker" in navigator&&(location.protocol==="https:"||location.hostnam
 }
 function showUpdate(){const b=document.createElement("div");b.style.cssText="position:fixed;left:12px;right:12px;bottom:12px;z-index:50;background:var(--accent);color:var(--accent-ink);padding:12px 14px;border-radius:10px;display:flex;gap:10px;align-items:center;box-shadow:0 4px 16px rgba(0,0,0,.3)";b.innerHTML='<span style="flex:1">A new version of the app is ready.</span><button class="b s" style="background:#fff;color:#000">Reload</button>';b.querySelector("button").onclick=()=>location.reload();document.body.appendChild(b)}
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
+/* ---------- talk-in species composition ---------- */
+const SP_SYN=[["Sugar maple",["sugar maple","hard maple","rock maple","sm"]],["Red maple",["red maple","soft maple","swamp maple","rm"]],["Yellow birch",["yellow birch","yb"]],["White birch",["white birch","paper birch","wb"]],["Gray birch",["gray birch","grey birch","gb"]],["American beech",["american beech","beech","be"]],["White ash",["white ash","wa"]],["Brown ash",["brown ash","black ash","ba"]],["Black cherry",["black cherry","cherry","bc"]],["Hophornbeam",["hophornbeam","hop hornbeam","hornbeam","ironwood","hh"]],["Basswood",["basswood","bw"]],["Bigtooth aspen",["bigtooth aspen","big tooth aspen","bigtooth","big tooth","bta"]],["Aspen",["quaking aspen","trembling aspen","aspen","popple","poplar","as"]],["Red oak",["red oak","oak","ro"]],["Striped maple",["striped maple","moosewood","stm"]],["Pin cherry",["pin cherry","fire cherry","pc"]],["Elm",["american elm","elm","el"]],["White pine",["white pine","wp"]],["Red pine",["red pine","rp"]],["Hemlock",["eastern hemlock","hemlock","he"]],["Red spruce",["red spruce","rs"]],["White spruce",["white spruce","ws"]],["Black spruce",["black spruce","bs"]],["Spruce",["spruce"]],["Balsam fir",["balsam fir","balsam","fir","bf"]],["Northern white cedar",["northern white cedar","white cedar","cedar","arborvitae","ce","nwc"]],["Tamarack",["tamarack","larch","hackmatack","ta"]]];
+const NUMW={zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19,twenty:20,thirty:30,forty:40,fourty:40,fifty:50,sixty:60,seventy:70,eighty:80,ninety:90,hundred:100};
+function spWordsToNums(t){
+  t=t.replace(/(\d)\s*(%|percent|per cent|pct)/g,"$1");
+  return t.replace(/\b(?:(zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fourty|fifty|sixty|seventy|eighty|ninety|hundred)(?:[\s-]+(one|two|three|four|five|six|seven|eight|nine))?)\b/g,(m,a,b)=>String(a==="hundred"?100:NUMW[a]+(b?NUMW[b]:0)));
+}
+function parseSpecies(text){
+  let t=" "+spWordsToNums(String(text||"").toLowerCase()).replace(/[^a-z0-9.\s-]/g," ").replace(/\s+/g," ")+" ";
+  const alts=[];SP_SYN.forEach(([name,ws])=>ws.forEach(w=>alts.push([w,name])));alts.sort((a,b)=>b[0].length-a[0].length);
+  const re=new RegExp("(?<![a-z])("+alts.map(a=>a[0].replace(/ /g,"[\\s-]+")).join("|")+")(?![a-z])","g");
+  const hits=[];let m;while((m=re.exec(t))){const w=m[1].replace(/[\s-]+/g," ");const nm=alts.find(a=>a[0]===w);hits.push({name:nm?nm[1]:w,start:m.index,end:m.index+m[0].length})}
+  const used=new Set(), out=[], problems=[];
+  const numsIn=(a,b)=>{const seg=t.slice(a,b);const r=/(\d+(?:\.\d+)?)/g;const ns=[];let k;while((k=r.exec(seg)))ns.push({v:parseFloat(k[1]),pos:a+k.index});return ns};
+  const numFirst=hits.length>0&&numsIn(0,hits[0].start).length>0;
+  hits.forEach((h,i)=>{
+    const after=numsIn(h.end,i+1<hits.length?hits[i+1].start:t.length).filter(n=>!used.has(n.pos));
+    const before=numsIn(i>0?hits[i-1].end:0,h.start).filter(n=>!used.has(n.pos));
+    let n=numFirst?(before[before.length-1]||after[0]):(after[0]||before[before.length-1]);
+    if(n){used.add(n.pos);out.push({species:h.name,pct:n.v})}else problems.push(`No percent heard for ${h.name}.`);
+  });
+  const merged=[];out.forEach(r=>{const e=merged.find(x=>x.species===r.species);if(e){e.pct+=r.pct;problems.push(`${r.species} was said twice, so I added the two together.`)}else merged.push({...r})});
+  const leftovers=numsIn(0,t.length).filter(n=>!used.has(n.pos)).map(n=>n.v);
+  if(leftovers.length)problems.push(`Number${leftovers.length>1?"s":""} ${leftovers.join(", ")} didn't match a species I know. Check for a species name I missed.`);
+  merged.sort((a,b)=>b.pct-a.pct);
+  const total=Math.round(merged.reduce((a,r)=>a+r.pct,0)*10)/10;
+  return {rows:merged,total,problems};
+}
+let spPreview=null;
+function spPreviewHTML(){
+  if(!spPreview)return "";
+  const {rows,total,problems}=spPreview;
+  if(!rows.length)return `<p class="tot bad">I didn't catch any species. Try something like "sugar maple 40, red maple 25, beech 20, hemlock 15".</p>`;
+  return `<div class="calc" style="margin-top:8px"><b>Here's what I heard:</b> ${rows.map(r=>`${esc(r.species)} ${r.pct}%`).join(", ")}
+  <div class="tot ${total===100?"ok":"warn"}" style="margin-left:6px">Total ${total}%</div>
+  ${problems.length?`<ul style="margin:6px 0 0 18px">${problems.map(p=>`<li>${esc(p)}</li>`).join("")}</ul>`:""}
+  <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><button class="b s p" data-spuse="1">Use this</button>${total!==100&&total>0?`<button class="b s" data-spuse="scale">Use and scale to 100%</button>`:""}<button class="b s" data-spuse="cancel">Cancel</button></div></div>`;
+}
+document.addEventListener("click",e=>{const t=e.target.closest("[data-spcheck],[data-spuse]");if(!t)return;const s=P.stands[standIdx];if(!s)return;
+  if(t.dataset.spcheck){spPreview=parseSpecies(s.speciesSaid);const box=document.getElementById("spPrev");if(box)box.innerHTML=spPreviewHTML();return}
+  const mode=t.dataset.spuse;if(mode!=="cancel"&&spPreview&&spPreview.rows.length){let rows=spPreview.rows.map(r=>({...r}));
+    if(mode==="scale"){const tot=rows.reduce((a,r)=>a+r.pct,0);rows=rows.map(r=>({...r,pct:Math.round(r.pct*1000/tot)/10}));const diff=Math.round((100-rows.reduce((a,r)=>a+r.pct,0))*10)/10;rows[0].pct=Math.round((rows[0].pct+diff)*10)/10}
+    s.species=rows.map(r=>({species:r.species,pct:String(r.pct)}));persist()}
+  spPreview=null;render();
+});
+
 let DL=null;
 if(window.claude&&window.claude.use){window.claude.use("downloads").then(d=>{DL=d}).catch(()=>{})}
 render();
