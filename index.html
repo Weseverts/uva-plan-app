@@ -533,8 +533,8 @@ function exportFile(){
   out.format="uva-plan-data"; out.formatVersion=1; out.exported=new Date().toISOString();
   out.computed={schedule:schedule(),stands:P.stands.map(s=>({number:s.number,...standCalc(s)})),issues:issues()};
   const blob=new Blob([JSON.stringify(out,null,2)],{type:"application/json"});
-  if(arguments[0]==="share"){const f=new File([blob],fileName(),{type:"application/json"});
-    navigator.share({files:[f],title:fileName()}).then(()=>{P.lastShared=new Date().toISOString();persist();render()}).catch(e=>{if(e&&e.name!=="AbortError")alert("Couldn't share: "+e.message)});return}
+  if(arguments[0]==="share"){const f=new File([blob],fileName().replace(/\.json$/,".txt"),{type:"text/plain"});
+    navigator.share({files:[f],title:fileName()}).then(()=>{P.lastShared=new Date().toISOString();persist();render()}).catch(e=>{if(e&&e.name!=="AbortError"){alert("Sharing didn't work ("+e.message+"), so the file will download instead. Then move it into OneDrive from the Files app.");exportFile()}});return}
   if(DL){DL.save({filename:fileName(),data:blob}).catch(e=>{if(e&&e.code!=="declined")alert("Couldn't save the file here ("+(e.code||e)+").")});return}
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fileName();document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);
 }
@@ -907,7 +907,7 @@ function cloudPanel(compact){
 document.addEventListener("click",e=>{const t=e.target.closest("[data-cloudopen]");if(t)cloudOpen(t.dataset.cloudopen)});
 if(window.claude&&window.claude.use){window.claude.use("db").then(d=>{if(!d)return;CDB=d;cloudRefresh()}).catch(()=>{})}
 
-function canShareFiles(){try{return !!(navigator.canShare&&navigator.canShare({files:[new File(["x"],"x.json",{type:"application/json"})]}))}catch(e){return false}}
+function canShareFiles(){try{return !!(navigator.canShare&&navigator.canShare({files:[new File(["x"],"x.txt",{type:"text/plain"})]}))}catch(e){return false}}
 /* offline app: service worker + durable storage */
 if("serviceWorker" in navigator&&(location.protocol==="https:"||location.hostname==="localhost")){
   navigator.serviceWorker.register("sw.js").then(reg=>{
