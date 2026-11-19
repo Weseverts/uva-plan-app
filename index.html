@@ -567,7 +567,7 @@ function standChecks(s){
     if((s.treatments||[]).some(t=>t.code&&!["NONE","INV","AMP"].includes(t.code))) add("Silvicultural guide","guide",v("guide"));
     if(has(["S"])) add("Sugarbush: tapping & 25% non-maple noted","objective",/tap/i.test((s.objective||"")+(s.fieldNotes||"")));
   }
-  (s.treatments||[]).filter(t=>t.code&&!["INV","AMP","NONE"].includes(t.code)).forEach(t=>{add("Trees favored for retention ("+t.code+")","treatments",t.retainChars||t.residualSpecies);add("Trees favored for removal ("+t.code+")","treatments",t.targets);add("Residual BA ("+t.code+")","treatments",t.residualBA||t.code==="CC");add("Invasive control necessary? ("+t.code+")","treatments",t.invasiveNeeded)});
+  (s.treatments||[]).forEach((t,j)=>{if(!t.code||["INV","AMP","NONE"].includes(t.code))return;const q="treatments."+j+".";add("Trees favored for retention ("+t.code+")",q+"retainChars",t.retainChars||t.residualSpecies);add("Trees favored for removal ("+t.code+")",q+"targets",t.targets);add("Residual BA ("+t.code+")",q+"residualBA",t.residualBA||t.code==="CC");add("Invasive control necessary? ("+t.code+")",q+"invasiveNeeded",t.invasiveNeeded)});
   const missing=L.filter(x=>!x[2]).map(x=>[x[0],x[1]]);
   return {total:L.length,done:L.length-missing.length,missing};
 }
