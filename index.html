@@ -55,6 +55,8 @@ kbd{border:1px solid var(--line);border-radius:4px;padding:0 4px;font:inherit;fo
 .mic.rec{background:var(--bad);border-color:var(--bad);animation:pulse 1.2s infinite}
 @keyframes pulse{50%{opacity:.55}}
 .chk-panel{border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:16px;background:var(--card)}
+.f.need>.l::after{content:" · needed";color:var(--warn,#b26b00);font-weight:600}
+.f.need input,.f.need textarea,.f.need select,.f.need .checks{border-color:var(--warn,#b26b00)!important;box-shadow:0 0 0 1px var(--warn,#b26b00) inset}
 .chk-panel.done{border-color:var(--ok);background:var(--ok-bg)}
 .chk-bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin:8px 0}
 .chk-bar i{display:block;height:100%;background:var(--accent)}
@@ -96,6 +98,7 @@ td input{min-height:34px;padding:5px 6px}
 .hide{display:none!important}
 @media (max-width:640px){ header{position:static} nav{top:0} .row{grid-template-columns:1fr 1fr!important} .row .f.wide2{grid-column:1/-1} }
 @media print{header,nav,button{display:none!important} section.card{break-inside:avoid;border:0}}
+.amendbox{border:2px dashed #b7791f;border-radius:8px;padding:8px 10px;margin-top:10px;background:#fffaf0}
 </style>
 </head>
 <body>
@@ -114,8 +117,9 @@ td input{min-height:34px;padding:5px 6px}
 </datalist>
 <datalist id="dl-nc"><option>Northern Hardwood Forest</option><option>Rich Northern Hardwood Forest</option><option>Mesic Maple-Ash-Hickory-Oak Forest</option><option>Hemlock Forest</option><option>Hemlock-Northern Hardwood Forest</option><option>White Pine-Northern Hardwood Forest</option><option>Red Spruce-Northern Hardwood Forest</option><option>Red Spruce-Hemlock Forest</option><option>Lowland Spruce-Fir Forest</option><option>Montane Spruce-Fir Forest</option><option>Montane Yellow Birch-Red Spruce Forest</option><option>Dry Oak Forest</option><option>Dry Oak Woodland</option><option>Pine-Oak-Heath Sandplain Forest</option><option>Northern White Cedar Swamp</option><option>Red Maple-Black Ash Swamp</option><option>Spruce-Fir-Tamarack Swamp</option><option>Black Spruce Swamp</option><option>Hemlock Swamp</option><option>Red Maple-Northern White Cedar Swamp</option><option>Seeps</option><option>Vernal Pool</option><option>Successional / old field forest</option></datalist>
 <datalist id="dl-trt">
-<option value="T">T – Thinning</option><option value="CTR">CTR – Crop Tree Release</option><option value="TSI">TSI – TSI / PCT / Weeding / Cleaning</option><option value="RT">RT – Row / Mechanical Thinning</option><option value="CC">CC – Clearcut</option><option value="PC">PC – Progressive Clearcut</option><option value="PCSW">PCSW – Preparatory Cut</option><option value="RSW">RSW – Shelterwood Establishment</option><option value="RGS">RGS – Group Shelterwood</option><option value="OSR">OSR – Overstory Removal</option><option value="STC">STC – Seed Tree Cut</option><option value="STS">STS – Single Tree Selection</option><option value="GS">GS – Group Selection</option><option value="SWR">SWR – Shelterwood with Reserves</option><option value="CCIS">CCIS – Continuous Cover Irreg. Shelterwood</option><option value="EGG">EGG – Expanding Gap / Group</option><option value="SC">SC – Salvage Cut</option><option value="NONE">NONE – No activity prescribed</option><option value="INV">INV – Invasive plant control</option><option value="AMP">AMP – AMP remediation</option>
+<option value="T">T – Thinning</option><option value="CTR">CTR – Crop Tree Release</option><option value="TSI">TSI – TSI / PCT / Weeding / Cleaning</option><option value="RT">RT – Row / Mechanical Thinning</option><option value="CC">CC – Clearcut</option><option value="PC">PC – Progressive Clearcut</option><option value="PCSW">PCSW – Preparatory Cut</option><option value="RSW">RSW – Shelterwood Establishment</option><option value="RGS">RGS – Group Shelterwood</option><option value="OSR">OSR – Overstory Removal</option><option value="RSWR">RSWR – Regular Shelterwood Removal Cut</option><option value="STC">STC – Seed Tree Cut</option><option value="STS">STS – Single Tree Selection</option><option value="GS">GS – Group Selection</option><option value="SWR">SWR – Shelterwood with Reserves</option><option value="CCIS">CCIS – Continuous Cover Irreg. Shelterwood</option><option value="EGG">EGG – Expanding Gap / Group</option><option value="SC">SC – Salvage Cut</option><option value="NONE">NONE – No activity prescribed</option><option value="INV">INV – Invasive plant control</option><option value="AMP">AMP – AMP remediation</option>
 </datalist>
+<datalist id="dl-trtname"><option value="No Silvicultural Treatment"><option value="Thinning"><option value="Crop Tree Release"><option value="Timber Stand Improvement"><option value="Single Tree Selection"><option value="Group Selection"><option value="Expanding Gap/Group Irregular Shelterwood"><option value="Regular Shelterwood Establishment Cut"><option value="Regular Shelterwood Removal Cut"><option value="Overstory Removal"><option value="Clearcut"><option value="Salvage Cut"><option value="Introduced Invasive Plant Treatment"><option value="N/A"></datalist>
 <datalist id="dl-soils">
 <option>Dummerston</option><option>Colton-Duxbury complex</option><option>Vershire-Lombard complex</option><option>Cabot silt loam</option><option>Peru fine sandy loam</option><option>Tunbridge-Peru complex</option><option>Buckland fine sandy loam</option><option>Marlow</option><option>Berkshire</option><option>Lyman-Tunbridge complex</option><option>Monadnock</option><option>Pittstown</option><option>Glover</option><option>Woodstock</option>
 </datalist>
@@ -135,26 +139,28 @@ function blankStand(n){return {
   invMethod:"Point (variable radius)", invDate:"", points:"", baf:"10", dataSource:"hand",
   qmd:"", baTotal:"", baMin:"", baMax:"", ags:"", ugs:"",
   species:[{species:"",pct:""}], stocking:"",
-  diam:[6,8,10,12,14,16,18,20,22,"24+"].map(c=>({cls:String(c),tpa:"",ba:"",snags:""})),
+  diam:[6,8,10,12,14,16,18,20,22,"24+"].map(c=>({cls:String(c),tpa:"",ba:"",ags:"",snags:""})),
   regen:[{species:"",stems:"",size:""}], regenNarrative:"", regenBarriers:"",
   invasives:[], invasiveLevel:"None",
   browseIntensity:"", browsePattern:"",
   cwm:{a:"",b:"",c:"",decay:""},
-  treatHistory:"", landHistory:"", health:"", ampStatus:"Meets standards", reserveCondition:"", esta:"", notes:"",
+  treatHistory:"", landHistory:"", health:"", ampStatus:"Meets standards", ampObserved:"Meets", ampDescription:"", ampRemediation:"", reserveCondition:"", esta:"", notes:"",
+  narrative:"", prevActivity:"", prevYear:"", regenClass:"", amendScope:"", amendReason:"",
   system:"", objective:"", standAge:"", rotationAge:"", diamObjectives:"", cuttingCycle:"", guide:"",
   treatments:[], noActivity:false, noActivityReason:"", fieldNotes:""
 }}
-function blankTreatment(){return {id:uid(), year:"", code:"", season:"", pct:"100", description:"", residualSpecies:"", canopyPosition:"", residualBA:"", groupSize:"", retention:"", regenGoals:"", cohorts:"", legacy:"", targets:"", invasiveControl:"", ampRemediation:"", amendReason:""}}
+function blankTreatment(){return {id:uid(), year:"", code:"", season:"", pct:"100", description:"", residualSpecies:"", canopyPosition:"", residualBA:"", groupSize:"", retention:"", regenGoals:"", cohorts:"", legacy:"", targets:"", retainChars:"", invasiveNeeded:"", groupType:"", groupPct:"", invasiveControl:"", ampRemediation:"", amendReason:"", priorTreatment:"", priorYear:""}}
 function blankProp(){return {
   id:uid(), created:new Date().toISOString(), updated:null,
-  plan:{types:["Update"], startYear:String(thisYear+1), submissionDate:"", amendmentSummary:"", subcats:["Productive Forestland"]},
+  plan:{types:["Update"], startYear:String(thisYear+1), expirationYear:"", submissionDate:"", amendmentSummary:"", subcats:["Productive Forestland"], amendment:{kinds:[],parcel:[],mapChanged:false}},
+  primaryContact:"",
   owners:[{name:"",address:"",phone:"",email:""}],
   decisionMaker:"",
   transfer:{prevOwner:"",transferDate:"",deedBookPage:"",prevSpan:"",notes:""},
   property:{town:"",span:"",glAcres:"",enrolledAcres:"",orthophoto:"",bioRegion:"",location:"",objectives:"",description:"",wildlife:"",cultural:"",recreation:""},
   soils:[{series:"",description:"",siteIndex:""}],
   aquatic:{intermittent:{p:"",n:""},perennial:{p:"",n:""},ponds:{p:"",n:""},wet12:{p:"",n:""},wet3:{p:"",n:""}},
-  amp:{rating:"",summary:"",deficiencies:""},
+  amp:{rating:"",summary:"",deficiencies:"",fullyObserved:false},
   rte:{none:true,items:[]},
   acres:{fps:"",managed:"",siteIV:"",openIdle:"",sigSens:""},
   stands:[blankStand(1)], fieldNotes:"",
@@ -175,6 +181,12 @@ const REGEN_SIZE=["Seedling","Sapling","Seedling & sapling"];
 const REGEN_ABUND=["Abundant","Common","Scattered","Rare"];
 // Stems/acre ranges filled in when an abundance is picked. 350/ac is the UVA regeneration standard (MMS 3.2.3).
 const REGEN_RANGE={Abundant:"over 1,000",Common:"350–1,000",Scattered:"100–349",Rare:"under 100"};
+const AMP_CLASSES=["Meets","Partially meets","Does not meet","Discontinued/stable/revegetated","Not observed","Unable to observe","Management in progress"];
+const AMP_LEGACY={"Meets standards":"Meets","Remediation required":"Partially meets","Further on-site review needed (snow cover)":"Unable to observe"};
+const REGEN_CLASSES=["Low: 0-349 stems/acre","Low/Moderate: 350-999 stems/acre","High: 1,000+ stems/acre"];
+const AMEND_KINDS=["Change in Treatment Year","Change in Treatment Type","Addition to Enrollment","Change in Enrollment Subcategory","Transfer","Other"];
+const AMEND_PARCEL=["Contact info","Landowner objectives","Treatment schedule","AMP table","RTE statement"];
+const AMEND_SCOPE=["Prescription changed (new treatment type)","Treatment year only","New stand (full stand summary)","Acreage only","Stand description revised"];
 const REGEN_BARRIERS=["None observed","Deer/moose browse","Beech","Hay-scented fern","Striped maple / hophornbeam","Invasive plants","Low light / dense canopy","Raspberry / competing vegetation","Poor seed source"];
 function normSp(x){
   const t=String(x).trim().replace(/\s+/g," ");const lo=t.toLowerCase();
@@ -195,7 +207,13 @@ function migrateProp(p){
     if(!Array.isArray(st.regenBarrierList))st.regenBarrierList=[];
     if(st.regenStocking==null)st.regenStocking="";
     if(st.regenDist==null)st.regenDist="";
+    if(st.ampObserved==null)st.ampObserved=AMP_LEGACY[st.ampStatus]||"";
+    ["narrative","prevActivity","prevYear","regenClass","amendScope","amendReason","ampDescription","ampRemediation"].forEach(k=>{if(st[k]==null)st[k]=""});
+    (st.diam||[]).forEach(d=>{if(d.ags==null)d.ags=""});
   });
+  if(!p.plan.amendment)p.plan.amendment={kinds:[],parcel:[],mapChanged:false};
+  if(p.plan.expirationYear==null)p.plan.expirationYear="";
+  if(p.primaryContact==null)p.primaryContact="";
 }
 function regenSentence(s){
   const rows=(s.regen||[]).filter(r=>r.species);
@@ -260,20 +278,27 @@ function R(arrPath,defs,cols,addLabel,opts={}){
 /* ---------- sections ---------- */
 const TABS=[["property","Property & owners"],["resources","Soils & resources"],["water","Water, AMPs, RTE"],["stands","Stands"],["map","Field map"],["review","Schedule & checks"],["export","Save & send"]];
 
+function isAmend(){const t=P.plan.types||[];return t.includes("Amendment")||t.includes("Addition")||t.includes("Transfer")}
 function vProperty(){
   const cloudTop=(typeof cloudPanel==="function")?cloudPanel(true):"";
-  const isT=(P.plan.types||[]).includes("Transfer"), isA=(P.plan.types||[]).includes("Amendment");
-  return `${cloudTop}<section class="card"><h2>Plan</h2>${G("plan",[
+  const isT=(P.plan.types||[]).includes("Transfer"), isA=isAmend();
+  return `${cloudTop}${secPanel("property")}<section class="card"><h2>Plan</h2>${G("plan",[
     ["types","Submission type","chk",{o:["New Plan","Update","Amendment","Transfer","Addition","Withdrawal"],wide:true}],
     ["subcats","Enrollment subcategories in this plan","chk",{o:["Productive Forestland","Sugarbush","Reserve Forestland","ESTA","Significant Wildlife Habitat"],wide:true}],
     ["startYear","Plan period begins April 1 of","n",{hint:"Plan runs 10 years from this date"}],
     ["submissionDate","Plan submission date","date"],
   ])}
-  <div class="${isA?"":"hide"}">${G("plan",[["amendmentSummary","Amendment summary (what changed and why)","ta",{wide:true}]])}</div>
+  <div class="${isA||isT?"":"hide"}"><h3>Amendment (follows FPR's Sample Plan and Amendment Package)</h3>
+  <p class="hint">Only the changed plan elements go in the amendment, under the same headings as the plan. The expiration date stays the approved plan's date. Every stand still goes on the Parcel Data Entry Form.</p>
+  ${G("plan",[["expirationYear","Approved plan expires April 1 of","n",{hint:"From the approved plan: start year + 10"}]])}
+  ${G("plan.amendment",[["kinds","Amendment type","chk",{o:AMEND_KINDS,wide:true}],["parcel","Parcel Overview elements that change","chk",{o:AMEND_PARCEL,wide:true,hint:"Treatment schedule: whenever a treatment or year changes. Contact info: transfers. AMP + RTE: additions."}],
+    ["mapChanged","","chk",{o:["Map changes (transfer, addition, subcategory change): new map goes in the packet"],wide:true}]]).replace('data-p="plan.amendment.mapChanged"','data-p="plan.amendment.mapChanged" data-bool="1"')}
+  ${G("plan",[["amendmentSummary","Amendment summary for the cover page (optional; Claude writes it from the changes if blank)","ta",{wide:true,ph:"Change of Treatment Type and related prescription elements in Stand 1. Changing from No Silvicultural Treatment to Thinning."}]])}
+  <p class="hint">On each changed stand, set "What this amendment changes" and the reason for amending.</p></div>
   </section>
   <section class="card"><h2>Landowner(s)</h2><p class="hint">List every owner exactly as on the deed / grand list. Two or more owners means CU-302 goes in a transfer packet.</p>
   ${R("owners",[["name","Owner name","t"],["address","Mailing address","t"],["phone","Phone","t"],["email","Email","t"]],"1.3fr 1.6fr 1fr 1.2fr","Add owner")}
-  <div style="margin-top:12px">${G("",[["decisionMaker","Legal decision-maker / POA (if not the landowner)","t",{wide:true}]])}</div>
+  <div style="margin-top:12px">${G("",[["primaryContact","Primary landowner contact","sel",{o:P.owners.filter(o=>o.name).map(o=>o.name),hint:"Goes in the Parcel Overview contact table (first owner if blank)"}],["decisionMaker","Legal decision-maker / POA (if not the landowner)","t",{wide:true}]])}</div>
   </section>
   <section class="card ${isT?"":"hide"}"><h2>Transfer details</h2>${G("transfer",[
     ["prevOwner","Previous owner(s)","t"],["transferDate","Date of transfer","date"],["deedBookPage","Deed book / page","t"],["prevSpan","Previous SPAN (if changed)","t"],["notes","Transfer notes (subdivision, acreage change, etc.)","ta",{wide:true}]])}
@@ -286,7 +311,7 @@ function vProperty(){
   </section>`;
 }
 function vResources(){
-  return `<section class="card"><h2>Soils</h2><p class="hint">Site index format you already use works fine, e.g. "SM 61, RM 60, BF 60".</p>
+  return `${secPanel("resources")}<section class="card"><h2>Soils</h2><p class="hint">Site index format you already use works fine, e.g. "SM 61, RM 60, BF 60".</p>
   ${R("soils",[["series","Soil series","t",{list:"dl-soils"}],["siteIndex","Site index by species","t",{ph:"SM 61, RM 60"}],["description","Description / limitations","t"]],"1.2fr 1fr 2fr","Add soil")}
   </section>
   <section class="card notes-card"><h2>Property field notes: just talk</h2><p class="hint">Access, history, wildlife sign, cultural features, owner goals. Claude turns this into the property description and resource sections.</p>${G("",[["fieldNotes","","ta",{wide:true,big:true}]])}</section>
@@ -296,10 +321,11 @@ function vResources(){
 }
 function vWater(){
   const aq=[["intermittent","Intermittent streams"],["perennial","Perennial streams / rivers"],["ponds","Lakes / ponds"],["wet12","Class I / II wetlands (incl. vernal pools)"],["wet3","Class III wetlands"]];
-  return `<section class="card"><h2>Aquatic features</h2>
+  return `${secPanel("water")}<section class="card"><h2>Aquatic features</h2>
   ${aq.map(([k,l])=>`<div class="row" style="grid-template-columns:1fr 2fr">${F("aquatic."+k,["p",l,"radio",{o:["Yes","No"]}])}${F("aquatic."+k,["n","Location / stands / notes","t"])}</div>`).join("")}
   </section>
-  <section class="card"><h2>AMP implementation overview (whole parcel)</h2>${G("amp",[
+  <section class="card"><h2>AMP implementation overview (whole parcel)</h2><p class="hint">The plan's AMP table is built per stand from each stand's "AMP implementation observed". Tick below only if you walked every road and trail.</p>
+  ${G("amp",[["fullyObserved","","chk",{o:["AMPs were fully observed during inventory"],wide:true}]]).replace('data-p="amp.fullyObserved"','data-p="amp.fullyObserved" data-bool="1"')}${G("amp",[
     ["rating","Parcel AMP rating","radio",{o:["Meets requirements","Partially meets","Does not meet"],wide:true}],
     ["summary","Summary of conditions","ta",{wide:true,ph:"Roads, skid trails, crossings, landings observed"}],
     ["deficiencies","Deficiencies & remediation (location, stands, year)","ta",{wide:true}]])}
@@ -342,7 +368,9 @@ function vStands(){
     ["community","Natural community type","sel",{o:NCOMM}],["sRank","Conservation rank (state)","sel",{o:["S1","S2","S3","S4","S5"]}],["eoRank","Occurrence rank","sel",{o:["A","B","C","D"]}],["standType","Cover type (NE aerial photo guide)","sel",{o:["BS – Black spruce","BS/T – Black spruce–tamarack","RS – Red spruce","RS/BF – Red spruce–balsam fir","RP – Red pine","WP – Eastern white pine","H – Eastern hemlock","WP/H – White pine–hemlock","PP – Pitch pine","AWC – Atlantic white-cedar","Asp – Aspen","WB – White birch","SM – Sugar maple","RM – Red maple","RO – Northern red oak","B/SM – Beech–sugar maple","SM/B/YB – Sugar maple–beech–yellow birch","WO/BO/RO – White oak–black oak–northern red oak","WP/RO/RM – White pine–red oak–red maple","RS/SM/B – Red spruce–sugar maple–beech","WB/RS/BF – White birch–red spruce–balsam fir","Other – Other (describe in stand notes)"]}],
     ["ageStructure","Age class structure","t",{ph:"Sapling – large sawlog"}],["ageClasses","Age classes (cohorts)","sel",{o:["1","2","3","4+"]}],
     ["soils","Dominant soil series","t",{list:"dl-soils"}],["siteClass","Site class","sel",{o:["I","II","III","IV"]}],["siteBasis","Site class basis","t",{ph:"Soil series / site index"}],
-  ])}</section>
+    ["narrative","Stand narrative","ta",{wide:true,hint:(s.subcat||[]).includes("SW")?"Required for Significant Wildlife Habitat":"Optional for Productive Forestland / Sugarbush; needed for ESTA and open land"}],
+  ])}
+  ${isAmend()?`<div class="amendbox">${G(b,[["amendScope","What this amendment changes in this stand","sel",{o:AMEND_SCOPE,hint:"Leave blank if this stand isn't amended"}],["amendReason","Reason for amending the prescription","ta",{wide:true}]])}</div>`:""}</section>
   <section class="card"><h2>Inventory</h2>${G(b,[
     ["invMethod","Sampling method","sel",{o:["Point (variable radius)","Fixed-radius plot","Walk-through / ocular","Other"]}],["invDate","Sampling date","date",{hint:"Fills the other stands too; change any of them if needed"}],["points","# points / plots","n"],["baf","BAF / plot size","t"],
     ["dataSource","Where are the numbers coming from?","radio",{o:["hand","tally sheets"],wide:true,hint:"Pick 'tally sheets' if you'll scan and send them. Claude will calculate everything below and fill it in."}],
@@ -361,14 +389,14 @@ function vStands(){
   <div class="tot ${totCls}" id="spTot">Total: ${c.spTotal||0}%${c.spTotal&&c.spTotal!==100?" (should be 100)":""}</div>
   ${c.cover?`<p class="calc"><b>Cover type line:</b> ${esc(c.cover)}${c.spBA?`<br><b>BA by species (ft²/ac):</b> ${esc(c.spBA)}`:""}</p>`:""}
   ${G(b,[["stocking","Stocking description","ta",{wide:true}]])}
-  <details><summary>Diameter distribution (required for forested stands; Claude builds it if you send tally sheets)</summary><div class="inner tw"><p class="hint">Type BA/ac and Trees/ac fills in: BA ÷ (0.005454 × class DBH²). The 24+ class uses 26". Type over Trees/ac if you have counts.</p><table><thead><tr><th>DBH class</th><th>Trees/ac</th><th>BA/ac</th><th>Snags/ac</th></tr></thead><tbody>
-  ${s.diam.map((d,i)=>`<tr><td>${esc(d.cls)}"</td>${["tpa","ba","snags"].map(k=>`<td><input inputmode="decimal" data-p="${b}.diam.${i}.${k}" value="${esc(d[k])}"></td>`).join("")}</tr>`).join("")}
+  <details><summary>Diameter distribution (required for forested stands; Claude builds it if you send tally sheets)</summary><div class="inner tw"><p class="hint">Type BA/ac and Trees/ac fills in: BA ÷ (0.005454 × class DBH²). The 24+ class uses 26". Type over Trees/ac if you have counts. AGS BA/ac feeds the plan's "Acceptable Basal Area" by 6–10", 12–16" and 18"+ ranges.</p><table><thead><tr><th>DBH class</th><th>Trees/ac</th><th>BA/ac</th><th>AGS BA/ac</th><th>Snags/ac</th></tr></thead><tbody>
+  ${s.diam.map((d,i)=>`<tr><td>${esc(d.cls)}"</td>${["tpa","ba","ags","snags"].map(k=>`<td><input inputmode="decimal" data-p="${b}.diam.${i}.${k}" value="${esc(d[k])}"></td>`).join("")}</tr>`).join("")}
   <tr id="diamTot">${diamTotHTML(s)}</tr>
   </tbody></table></div></details>
   </section>
   <section class="card"><h2>Regeneration, invasives, browse</h2>
   <div class="${nonForest?"hide":""}"><h3>Regeneration</h3>
-  ${G(b,[["regenStocking","Overall stocking","sel",{o:REGEN_STOCK}],["regenDist","Distribution","sel",{o:REGEN_DIST}]])}
+  ${G(b,[["regenStocking","Overall stocking","sel",{o:REGEN_STOCK}],["regenDist","Distribution","sel",{o:REGEN_DIST}],["regenClass","Regeneration classification","sel",{o:REGEN_CLASSES,hint:"Blank: worked out from stems/ac below"}]])}
   <div class="l" style="margin-top:8px">Species present</div>
   ${R(b+".regen",[["species","Species","sel",{o:SPECIES}],["size","Size","sel",{o:REGEN_SIZE}],["abundance","Abundance","sel",{o:REGEN_ABUND}],["stems","Stems/ac","t"]],"1.6fr 1fr 1fr .9fr","Add species",{tpl:{species:"",size:"",abundance:"",stems:""}})}
   <span class="hint">Seedling: under 1" DBH · Sapling: 1–4.9" DBH · Stems/ac fills from abundance: ${REGEN_ABUND.map(a=>a+" "+REGEN_RANGE[a]).join(" · ")}. Type over it if you counted.</span>
@@ -382,9 +410,10 @@ function vStands(){
   <div class="${(s.subcat||[]).some(x=>x==="RF"||x==="OF")?"":"hide"}"><h3>Coarse woody material (pieces/ac, &gt;4 ft)</h3>${G(b+".cwm",[["a",'8–12"',"n"],["b",'14–18"',"n"],["c",'20"+',"n"],["decay","Decay classes present","t",{ph:"2, 3, 4"}]])}</div>
   </section>
   <section class="card"><h2>History, health, AMPs</h2>${G(b,[
+    ["prevActivity","Activity prescribed in the last plan","t",{list:"dl-trtname",ph:"No Silvicultural Treatment"}],["prevYear","Year (last plan)","t",{ph:"N/A"}],
     ["treatHistory","UVA treatment history (prior plan prescribed vs. done)","ta",{wide:true}],["landHistory","Land use / stand history","ta",{wide:true}],
-    ["health","Forest health (insects, disease, damage)","ta",{wide:true}],
-    ["ampStatus","Stand AMP status","radio",{o:["Meets standards","Remediation required","Further on-site review needed (snow cover)"],wide:true}],
+    ["health","Forest health narrative (insects, disease, damage)","ta",{wide:true}],
+    ["ampObserved","AMP implementation observed","radio",{o:AMP_CLASSES,wide:true}],["ampDescription","AMP description","t",{wide:true,ph:"AMPs appear to be in place."}],["ampRemediation","AMP remediation plan","t",{wide:true,ph:"N/A, or e.g. Install waterbars in conjunction with treatment scheduled for 2029"}],
     ["reserveCondition","Reserve forest condition (RF only)","ta",{wide:true}],["esta","ESTA / special feature documentation","ta",{wide:true}],["notes","Stand notes (access, landings, operability)","ta",{wide:true}]])}
   </section>
   <section class="card ${nonForest?"hide":""}"><h2>Management objectives</h2>${G(b,[
@@ -394,7 +423,7 @@ function vStands(){
   </section>
   <section class="card"><h2>Planned treatments</h2><p class="hint">The treatment schedule is built from these automatically.</p>
   ${G(b,[["noActivity","","chk",{o:["No activity prescribed this plan period"],wide:true}]]).replace(`data-p="${b}.noActivity"`,`data-p="${b}.noActivity" data-bool="1"`)}
-  ${s.noActivity?G(b,[["noActivityReason","Reason (goes on the summary sheet)","t",{wide:true,ph:"Landowner wishes to preserve the aesthetic quality of this stand"}]]):""}
+  ${s.noActivity?G(b,[["noActivityReason","Prescription rationale (plan + summary sheet)","t",{wide:true,ph:"Landowner wishes to preserve the aesthetic quality of this stand"}]]):""}
   ${(s.treatments||[]).map((t,i)=>vTreatment(b+".treatments."+i,i)).join("")}
   <button class="b" data-add="${b}.treatments" data-blanktrt="1">+ Add treatment</button>
   </section>
@@ -409,13 +438,74 @@ function vTreatment(b,i){
     ["description","Treatment description","ta",{wide:true}]])}
   <details><summary>Prescription details (2026 Standards elements)</summary><div class="inner">${G(b,[
     ["residualBA","Residual BA (outside groups)","n"],["groupSize","Group / patch size & range","t",{ph:"¼–½ acre"}],["cohorts","Age cohorts retained","sel",{o:["1","2","3","4+"]}],
+    ["retainChars","Characteristics of trees favored for retention/release","t",{wide:true,ph:"Red maple, pine and sugar maple in the overstory; vigorous well-formed hemlock in any position"}],
+    ["targets","Characteristics of trees favored for removal","t",{wide:true,ph:"UGS red maple, beech, and mature pine competing with AGS stems"}],
+    ["invasiveNeeded","Is invasive plant control necessary for success of this treatment?","radio",{o:["Yes","No"]}],
+    ["groupType","Group type (group/patch systems)","sel",{o:["Regeneration","Release","Salvage"]}],["groupPct","% of stand in groups","t",{ph:"20%"}],
     ["residualSpecies","Residual species composition","t",{wide:true}],["canopyPosition","Canopy position of retained trees","t",{wide:true}],
-    ["retention","Retention pattern","t",{wide:true,ph:"Dispersed / aggregate + description"}],["regenGoals","Regeneration goals (top 3 species)","t",{wide:true}],
-    ["targets","Trees targeted for removal","t",{wide:true,ph:"Species, canopy position, stem quality, risk"}],["legacy","Legacy retention","t",{wide:true}],
-    ["invasiveControl","Invasive plant control plan","t",{wide:true}],["ampRemediation","AMP remediation plan","t",{wide:true}],["amendReason","Reason for amended prescription (amendments)","t",{wide:true}]])}</div></details>
+    ["retention","Retention in group / retention pattern","t",{wide:true,ph:"1-2 trees/acre"}],["regenGoals","Regeneration species goals","t",{wide:true}],
+    ["legacy","Legacy retention","t",{wide:true}],
+    ["invasiveControl","Invasive plant control plan","t",{wide:true}],["ampRemediation","AMP remediation plan","t",{wide:true}]])}
+  ${isAmend()?G(b,[["priorTreatment","Approved plan had (treatment)","t",{ph:"No Silvicultural Treatment"}],["priorYear","Approved plan year","t"],["amendReason","Reason for amending the prescription","t",{wide:true}]]):""}</div></details>
   <button class="b s x" data-del="${b.replace(/\.\d+$/,"")}" data-i="${i}">Remove treatment</button></div></details>`;
 }
 
+function sectionChecks(which){
+  const L=[];const add=(label,jump,ok)=>L.push([label,jump,!!ok]);
+  const t=x=>x!=null&&String(x).trim()!=="";
+  const pr=P.property||{}, notes=String(P.fieldNotes||"").trim().length>80;
+  if(which==="property"){
+    const types=P.plan.types||[];
+    add("Submission type","plan.types",types.length);
+    add("Enrollment subcategories","plan.subcats",(P.plan.subcats||[]).length);
+    add("Plan start year","plan.startYear",t(P.plan.startYear));
+    if(isAmend()&&!types.includes("Update")&&!types.includes("New Plan")){add("Approved plan expiration year","plan.expirationYear",t(P.plan.expirationYear));add("Amendment type","plan.amendment.kinds",((P.plan.amendment||{}).kinds||[]).length)}
+    const ow=P.owners||[];
+    add("Owner name","owners.0.name",ow.some(o=>t(o.name)));
+    ow.forEach((o,i)=>{if(t(o.name))add(`Mailing address (${o.name})`,`owners.${i}.address`,t(o.address))});
+    {const named=ow.map((o,i)=>[o,i]).filter(([o])=>t(o.name));const pc=named.find(([o])=>o.name===P.primaryContact)||named[0];
+     if(pc){const [o,i]=pc;add(`Phone (${o.name}, primary contact)`,`owners.${i}.phone`,t(o.phone));add(`Email (${o.name}, primary contact)`,`owners.${i}.email`,t(o.email))}}
+    if(types.includes("Transfer")){add("Previous owner(s)","transfer.prevOwner",t((P.transfer||{}).prevOwner));add("Date of transfer","transfer.transferDate",t((P.transfer||{}).transferDate))}
+    [["town","Town"],["span","SPAN"],["glAcres","Grand list acres"],["enrolledAcres","Enrolled acres"],["orthophoto","Orthophoto #"],["bioRegion","Biophysical region"],["location","Location / access"]].forEach(([k,l])=>add(l,"property."+k,t(pr[k])));
+    add("Landowner objectives","property.objectives",t(pr.objectives)||notes);
+    const en=num(pr.enrolledAcres),sum=P.stands.reduce((a,x)=>a+(num(x.acres)||0),0);
+    if(en!=null&&sum>0)add(`Stand acres (${r1(sum*100)/100}) match enrolled acres`,"property.enrolledAcres",Math.abs(sum-en)<0.05);
+  }
+  if(which==="resources"){
+    const so=(P.soils||[]).filter(x=>t(x.series));
+    add("At least one soil series","soils.0.series",so.length);
+    (P.soils||[]).forEach((x,i)=>{if(t(x.series)){add(`Site index: ${x.series}`,`soils.${i}.siteIndex`,t(x.siteIndex));add(`Limitations: ${x.series}`,`soils.${i}.description`,t(x.description))}});
+    [["wildlife","Wildlife habitat"],["cultural","Cultural resources"],["recreation","Recreation"]].forEach(([k,l])=>add(l,"property."+k,t(pr[k])));
+  }
+  if(which==="water"){
+    const aq=P.aquatic||{};
+    [["intermittent","Intermittent streams"],["perennial","Perennial streams"],["ponds","Lakes / ponds"],["wet12","Class I / II wetlands"],["wet3","Class III wetlands"]].forEach(([k,l])=>{const a=aq[k]||{};add(`${l}: yes or no`,`aquatic.${k}.p`,t(a.p));if(a.p==="Yes")add(`${l}: location / stands`,`aquatic.${k}.n`,t(a.n))});
+    const amp=P.amp||{};
+    add("Parcel AMP rating","amp.rating",t(amp.rating));
+    add("AMP summary of conditions","amp.summary",t(amp.summary));
+    if(amp.rating&&amp.rating!=="Meets requirements")add("AMP deficiencies & remediation","amp.deficiencies",t(amp.deficiencies));
+    const rte=P.rte||{},items=(rte.items||[]).filter(x=>t(x.feature));
+    add("RTE / significant communities, or 'None known'","rte.none",rte.none||items.length);
+    items.forEach((x,i)=>add(`Conservation approach: ${x.feature}`,`rte.items.${i}.approach`,t(x.approach)));
+  }
+  const missing=L.filter(x=>!x[2]);
+  return {total:L.length,done:L.length-missing.length,missing};
+}
+const SEC_TITLE={property:"Property & owners",resources:"Soils & resources",water:"Water, AMPs & RTE"};
+function secPanel(which){
+  const ck=sectionChecks(which), pct=ck.total?Math.round(100*ck.done/ck.total):100;
+  return `<div class="chk-panel${ck.missing.length?"":" done"}" id="secpanel"><b>${ck.missing.length?`${SEC_TITLE[which]} checklist: ${ck.done} of ${ck.total} done`:`✓ ${SEC_TITLE[which]} has everything the plan needs`}</b>
+  <div class="chk-bar"><i style="width:${pct}%"></i></div>
+  ${ck.missing.length?`<div class="hint">Still needed (tap to jump):</div><div class="chk-list">${ck.missing.map(m=>`<button data-jumpabs="${esc(m[1])}">${esc(m[0])}</button>`).join("")}</div>`:""}</div>`;
+}
+function markMissing(){
+  document.querySelectorAll(".f.need").forEach(e=>e.classList.remove("need"));
+  let miss=[];
+  if(SEC_TITLE[tab])miss=sectionChecks(tab).missing.map(m=>m[1]);
+  else if(tab==="stands"&&P.stands[standIdx])miss=standChecks(P.stands[standIdx]).missing.map(m=>"stands."+standIdx+"."+m[1]);
+  miss.forEach(p=>{const e=document.querySelector(`[data-p="${CSS.escape(p)}"]`);const box=e&&e.closest(".f");if(box)box.classList.add("need")});
+}
+function refreshSec(){clearTimeout(refreshSec.t);refreshSec.t=setTimeout(()=>{const old=document.getElementById("secpanel");if(old&&SEC_TITLE[tab]){const tmp=document.createElement("div");tmp.innerHTML=secPanel(tab);old.replaceWith(tmp.firstElementChild)}markMissing()},400)}
 function standChecks(s){
   const sc=s.subcat||[], has=a=>a.some(x=>sc.includes(x));
   const nf=has(["SIV","OI"])&&!has(["PF","S","RF","SW","SP","NC","RTE","RA","VP","FW","OF"]);
@@ -458,7 +548,10 @@ function standChecks(s){
   add("Stand / land use history","landHistory",v("landHistory")||notes);
   add("Forest health","health",v("health")||notes);
   add("UVA treatment history (or N/A)","treatHistory",v("treatHistory"));
-  add("Stand AMP status","ampStatus",v("ampStatus"));
+  add("AMP implementation observed","ampObserved",v("ampObserved"));
+  if(["Partially meets","Does not meet","Management in progress"].includes(s.ampObserved)) add("AMP remediation plan","ampRemediation",v("ampRemediation"));
+  if(sc.includes("SW")) add("Stand narrative (required for SW)","narrative",v("narrative"));
+  if(!nf) add("Activity prescribed in the last plan","prevActivity",v("prevActivity"));
   if(has(["RF"])){ add("Coarse woody material","cwm.a",s.cwm&&(s.cwm.a||s.cwm.b||s.cwm.c)); add("Reserve forest condition","reserveCondition",v("reserveCondition")); }
   if(has(["NC","RTE","RA","VP","FW","OF","SP","SW"])) add("ESTA / special feature documentation","esta",v("esta"));
   if(!nf){
@@ -474,7 +567,7 @@ function standChecks(s){
     if((s.treatments||[]).some(t=>t.code&&!["NONE","INV","AMP"].includes(t.code))) add("Silvicultural guide","guide",v("guide"));
     if(has(["S"])) add("Sugarbush: tapping & 25% non-maple noted","objective",/tap/i.test((s.objective||"")+(s.fieldNotes||"")));
   }
-  if(s.ampStatus==="Remediation required") add("AMP remediation plan","treatments",(s.treatments||[]).some(t=>t.ampRemediation||t.code==="AMP"));
+  (s.treatments||[]).forEach((t,j)=>{if(!t.code||["INV","AMP","NONE"].includes(t.code))return;const q="treatments."+j+".";add("Trees favored for retention ("+t.code+")",q+"retainChars",t.retainChars||t.residualSpecies);add("Trees favored for removal ("+t.code+")",q+"targets",t.targets);add("Residual BA ("+t.code+")",q+"residualBA",t.residualBA||t.code==="CC");add("Invasive control necessary? ("+t.code+")",q+"invasiveNeeded",t.invasiveNeeded)});
   const missing=L.filter(x=>!x[2]).map(x=>[x[0],x[1]]);
   return {total:L.length,done:L.length-missing.length,missing};
 }
@@ -489,7 +582,12 @@ function issues(){
   if(enrolled!=null){ if(Math.abs(sum-enrolled)>0.05) add("warn",`Stand acres total ${r1(sum*100)/100||0} but enrolled acres are ${enrolled}`); else add("ok",`Stand acres match enrolled acres (${enrolled})`); if(enrolled<25) add("bad","Enrolled acres under 25");}
   else add("warn","Enrolled acres not entered, so stand total can't be checked");
   if(!P.amp.rating) add("warn","Parcel AMP rating not chosen");
-  if((P.plan.types||[]).includes("Amendment")&&!P.plan.amendmentSummary) add("bad","Amendment summary needed on the cover page");
+  if(isAmend()){
+    if(!P.plan.expirationYear) add("bad","Amendment: enter the approved plan's expiration year (cover page)");
+    const am=P.stands.filter(s=>s.amendScope);
+    if(!am.length&&!((P.plan.amendment||{}).parcel||[]).length) add("bad","Amendment: mark which stands / Parcel Overview elements change");
+    am.forEach(s=>{if(!s.amendReason&&!(s.treatments||[]).some(t=>t.amendReason)) add("bad",`Stand ${s.number}: reason for amending the prescription`)});
+  }
   if((P.plan.types||[]).includes("Transfer")){ if(!P.transfer.prevOwner) add("warn","Transfer: previous owner not entered"); if(P.owners.filter(o=>o.name).length>1) add("ok","Transfer with more than one owner, so CU-302 goes in the packet"); }
   P.stands.forEach(s=>{
     const n="Stand "+(s.number||"?"); const c=standCalc(s); const ck=standChecks(s); if(ck.missing.length) add("warn",`${n}: ${ck.missing.length} item${ck.missing.length>1?"s":""} still needed (${ck.missing.slice(0,4).map(m=>m[0]).join(", ")}${ck.missing.length>4?"…":""})`); else add("ok",n+": complete"); const nf=(s.subcat||[]).some(x=>x==="SIV"||x==="OI");
@@ -545,13 +643,14 @@ function render(){
   migrateProp(P);
   const pick=document.getElementById("propPick");
   pick.innerHTML=Object.values(DB.props).sort((a,b)=>(b.updated||b.created).localeCompare(a.updated||a.created)).map(p=>`<option value="${p.id}"${p.id===P.id?" selected":""}>${esc((p.owners[0]&&p.owners[0].name)||"New property")}${p.property.town?" – "+esc(p.property.town):""}</option>`).join("");
-  document.getElementById("nav").innerHTML=TABS.map(([k,l])=>`<button data-tab="${k}" class="${k===tab?"on":""}">${l}</button>`).join("");
+  document.getElementById("nav").innerHTML=TABS.map(([k,l])=>`<button data-tab="${k}" class="${k===tab?"on":""}">${l}${SEC_TITLE[k]&&!sectionChecks(k).missing.length?" ✓":""}</button>`).join("");
   const v={property:vProperty,resources:vResources,water:vWater,stands:vStands,map:vMap,review:vReview,export:vExport}[tab]();
   document.getElementById("main").innerHTML=v;
   if(tab==="map")bindMap();
+  markMissing();
 }
 function clsMid(c){const n=parseFloat(c);return /\+/.test(String(c))?n+2:n}
-function diamTotHTML(st){const sum=k=>r1((st.diam||[]).reduce((a,d)=>a+(num(d[k])||0),0));return `<td><b>Total</b></td><td><b>${sum("tpa")}</b></td><td><b>${sum("ba")}</b></td><td><b>${sum("snags")}</b></td>`}
+function diamTotHTML(st){const sum=k=>r1((st.diam||[]).reduce((a,d)=>a+(num(d[k])||0),0));return `<td><b>Total</b></td><td><b>${sum("tpa")}</b></td><td><b>${sum("ba")}</b></td><td><b>${sum("ags")}</b></td><td><b>${sum("snags")}</b></td>`}
 function autoFill(path,val,prev){
   let m=path.match(/^stands\.(\d+)\.(baTotal|ags)$/);
   if(m){const st=P.stands[+m[1]],ba=num(st.baTotal),ags=num(st.ags);
@@ -594,7 +693,7 @@ document.addEventListener("input",e=>{
     setP(P,t.dataset.p,t.value);
     autoFill(t.dataset.p,t.value,prev);
     persist();
-    if(tab==="stands") refreshPanel();
+    if(tab==="stands") refreshPanel(); else refreshSec();
   }
 });
 document.addEventListener("change",e=>{
@@ -603,7 +702,7 @@ document.addEventListener("change",e=>{
     const am=t.dataset.p.match(/^(stands\.\d+\.regen\.\d+)\.abundance$/);
     if(am){const row=getP(P,am[1]);const cur=String(row.stems||"").trim();if(!cur||Object.values(REGEN_RANGE).includes(cur)){row.stems=REGEN_RANGE[t.value]||"";const el=document.querySelector(`[data-p="${am[1]}.stems"]`);if(el)el.value=row.stems}}
     persist();
-    if(/\.(species|regen|invasives)\.\d+\.\w+$/.test(t.dataset.p)||/\.(regenStocking|regenDist)$/.test(t.dataset.p)){if(tab==="stands")refreshPanel();clearTimeout(window.__selT);window.__selT=setTimeout(()=>{if(!document.activeElement||document.activeElement.tagName!=="SELECT")rerenderKeepFocus()},1200);return}
+    if(/\.(species|regen|invasives)\.\d+\.\w+$/.test(t.dataset.p)||/\.(regenStocking|regenDist)$/.test(t.dataset.p)){if(tab==="stands")refreshPanel();else refreshSec();clearTimeout(window.__selT);window.__selT=setTimeout(()=>{if(!document.activeElement||document.activeElement.tagName!=="SELECT")rerenderKeepFocus()},1200);return}
     rerenderKeepFocus();return}
   const grp=t.closest(".checks");
   if(grp){
@@ -620,6 +719,7 @@ document.addEventListener("click",e=>{
   const d=t.dataset;
   if(d.tab){tab=d.tab;render();window.scrollTo(0,0);return}
   if(d.jump){jumpTo("stands."+standIdx+"."+d.jump);return}
+  if(d.jumpabs){jumpTo(d.jumpabs);return}
   if(d.mic){toggleMic(d.mic,t);return}
   if(d.stand!=null){standIdx=+d.stand;if(typeof spPreview!=="undefined")spPreview=null;tab="stands";render();window.scrollTo(0,0);return}
   if(d.standadd){const n=P.stands.reduce((m,s)=>Math.max(m,parseInt(s.number)||0),0)+1;P.stands.push(blankStand(n));standIdx=P.stands.length-1;persist();render();window.scrollTo(0,0);return}
@@ -657,7 +757,7 @@ document.addEventListener("change",async e=>{if(e.target.id!=="importFile")retur
 function refreshPanel(){clearTimeout(refreshPanel.t);refreshPanel.t=setTimeout(()=>{const old=document.getElementById("chkpanel");if(!old||!P.stands[standIdx])return;const tmp=document.createElement("div");const s=P.stands[standIdx];
   // rebuild just the panel
   const html=vStands();tmp.innerHTML=html;const np=tmp.querySelector("#chkpanel");if(np)old.replaceWith(np);
-  const tabsOld=document.querySelector(".stand-tabs"),tabsNew=tmp.querySelector(".stand-tabs");if(tabsOld&&tabsNew)tabsOld.replaceWith(tabsNew);},400)}
+  const tabsOld=document.querySelector(".stand-tabs"),tabsNew=tmp.querySelector(".stand-tabs");if(tabsOld&&tabsNew)tabsOld.replaceWith(tabsNew);markMissing()},400)}
 function jumpTo(path){setTimeout(()=>jumpNow(path),230)}
 function jumpNow(path){
   const sel=`[data-p="${CSS.escape(path)}"]`;
