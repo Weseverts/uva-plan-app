@@ -55,6 +55,8 @@ kbd{border:1px solid var(--line);border-radius:4px;padding:0 4px;font:inherit;fo
 .mic.rec{background:var(--bad);border-color:var(--bad);animation:pulse 1.2s infinite}
 @keyframes pulse{50%{opacity:.55}}
 .chk-panel{border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:16px;background:var(--card)}
+.f.need>.l::after{content:" · needed";color:var(--warn,#b26b00);font-weight:600}
+.f.need input,.f.need textarea,.f.need select,.f.need .checks{border-color:var(--warn,#b26b00)!important;box-shadow:0 0 0 1px var(--warn,#b26b00) inset}
 .chk-panel.done{border-color:var(--ok);background:var(--ok-bg)}
 .chk-bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin:8px 0}
 .chk-bar i{display:block;height:100%;background:var(--accent)}
@@ -280,7 +282,7 @@ function isAmend(){const t=P.plan.types||[];return t.includes("Amendment")||t.in
 function vProperty(){
   const cloudTop=(typeof cloudPanel==="function")?cloudPanel(true):"";
   const isT=(P.plan.types||[]).includes("Transfer"), isA=isAmend();
-  return `${cloudTop}<section class="card"><h2>Plan</h2>${G("plan",[
+  return `${cloudTop}${secPanel("property")}<section class="card"><h2>Plan</h2>${G("plan",[
     ["types","Submission type","chk",{o:["New Plan","Update","Amendment","Transfer","Addition","Withdrawal"],wide:true}],
     ["subcats","Enrollment subcategories in this plan","chk",{o:["Productive Forestland","Sugarbush","Reserve Forestland","ESTA","Significant Wildlife Habitat"],wide:true}],
     ["startYear","Plan period begins April 1 of","n",{hint:"Plan runs 10 years from this date"}],
@@ -309,7 +311,7 @@ function vProperty(){
   </section>`;
 }
 function vResources(){
-  return `<section class="card"><h2>Soils</h2><p class="hint">Site index format you already use works fine, e.g. "SM 61, RM 60, BF 60".</p>
+  return `${secPanel("resources")}<section class="card"><h2>Soils</h2><p class="hint">Site index format you already use works fine, e.g. "SM 61, RM 60, BF 60".</p>
   ${R("soils",[["series","Soil series","t",{list:"dl-soils"}],["siteIndex","Site index by species","t",{ph:"SM 61, RM 60"}],["description","Description / limitations","t"]],"1.2fr 1fr 2fr","Add soil")}
   </section>
   <section class="card notes-card"><h2>Property field notes: just talk</h2><p class="hint">Access, history, wildlife sign, cultural features, owner goals. Claude turns this into the property description and resource sections.</p>${G("",[["fieldNotes","","ta",{wide:true,big:true}]])}</section>
@@ -319,7 +321,7 @@ function vResources(){
 }
 function vWater(){
   const aq=[["intermittent","Intermittent streams"],["perennial","Perennial streams / rivers"],["ponds","Lakes / ponds"],["wet12","Class I / II wetlands (incl. vernal pools)"],["wet3","Class III wetlands"]];
-  return `<section class="card"><h2>Aquatic features</h2>
+  return `${secPanel("water")}<section class="card"><h2>Aquatic features</h2>
   ${aq.map(([k,l])=>`<div class="row" style="grid-template-columns:1fr 2fr">${F("aquatic."+k,["p",l,"radio",{o:["Yes","No"]}])}${F("aquatic."+k,["n","Location / stands / notes","t"])}</div>`).join("")}
   </section>
   <section class="card"><h2>AMP implementation overview (whole parcel)</h2><p class="hint">The plan's AMP table is built per stand from each stand's "AMP implementation observed". Tick below only if you walked every road and trail.</p>
@@ -448,6 +450,60 @@ function vTreatment(b,i){
   <button class="b s x" data-del="${b.replace(/\.\d+$/,"")}" data-i="${i}">Remove treatment</button></div></details>`;
 }
 
+function sectionChecks(which){
+  const L=[];const add=(label,jump,ok)=>L.push([label,jump,!!ok]);
+  const t=x=>x!=null&&String(x).trim()!=="";
+  const pr=P.property||{}, notes=String(P.fieldNotes||"").trim().length>80;
+  if(which==="property"){
+    const types=P.plan.types||[];
+    add("Submission type","plan.types",types.length);
+    add("Enrollment subcategories","plan.subcats",(P.plan.subcats||[]).length);
+    add("Plan start year","plan.startYear",t(P.plan.startYear));
+    if(isAmend()&&!types.includes("Update")&&!types.includes("New Plan")){add("Approved plan expiration year","plan.expirationYear",t(P.plan.expirationYear));add("Amendment type","plan.amendment.kinds",((P.plan.amendment||{}).kinds||[]).length)}
+    const ow=P.owners||[];
+    add("Owner name","owners.0.name",ow.some(o=>t(o.name)));
+    ow.forEach((o,i)=>{if(t(o.name))add(`Mailing address (${o.name})`,`owners.${i}.address`,t(o.address))});
+    if(types.includes("Transfer")){add("Previous owner(s)","transfer.prevOwner",t((P.transfer||{}).prevOwner));add("Date of transfer","transfer.transferDate",t((P.transfer||{}).transferDate))}
+    [["town","Town"],["span","SPAN"],["glAcres","Grand list acres"],["enrolledAcres","Enrolled acres"],["orthophoto","Orthophoto #"],["bioRegion","Biophysical region"],["location","Location / access"]].forEach(([k,l])=>add(l,"property."+k,t(pr[k])));
+    add("Landowner objectives","property.objectives",t(pr.objectives)||notes);
+    const en=num(pr.enrolledAcres),sum=P.stands.reduce((a,x)=>a+(num(x.acres)||0),0);
+    if(en!=null&&sum>0)add(`Stand acres (${r1(sum*100)/100}) match enrolled acres`,"property.enrolledAcres",Math.abs(sum-en)<0.05);
+  }
+  if(which==="resources"){
+    const so=(P.soils||[]).filter(x=>t(x.series));
+    add("At least one soil series","soils.0.series",so.length);
+    (P.soils||[]).forEach((x,i)=>{if(t(x.series)){add(`Site index: ${x.series}`,`soils.${i}.siteIndex`,t(x.siteIndex));add(`Limitations: ${x.series}`,`soils.${i}.description`,t(x.description))}});
+    [["wildlife","Wildlife habitat"],["cultural","Cultural resources"],["recreation","Recreation"]].forEach(([k,l])=>add(l,"property."+k,t(pr[k])));
+  }
+  if(which==="water"){
+    const aq=P.aquatic||{};
+    [["intermittent","Intermittent streams"],["perennial","Perennial streams"],["ponds","Lakes / ponds"],["wet12","Class I / II wetlands"],["wet3","Class III wetlands"]].forEach(([k,l])=>{const a=aq[k]||{};add(`${l}: yes or no`,`aquatic.${k}.p`,t(a.p));if(a.p==="Yes")add(`${l}: location / stands`,`aquatic.${k}.n`,t(a.n))});
+    const amp=P.amp||{};
+    add("Parcel AMP rating","amp.rating",t(amp.rating));
+    add("AMP summary of conditions","amp.summary",t(amp.summary));
+    if(amp.rating&&amp.rating!=="Meets requirements")add("AMP deficiencies & remediation","amp.deficiencies",t(amp.deficiencies));
+    const rte=P.rte||{},items=(rte.items||[]).filter(x=>t(x.feature));
+    add("RTE / significant communities, or 'None known'","rte.none",rte.none||items.length);
+    items.forEach((x,i)=>add(`Conservation approach: ${x.feature}`,`rte.items.${i}.approach`,t(x.approach)));
+  }
+  const missing=L.filter(x=>!x[2]);
+  return {total:L.length,done:L.length-missing.length,missing};
+}
+const SEC_TITLE={property:"Property & owners",resources:"Soils & resources",water:"Water, AMPs & RTE"};
+function secPanel(which){
+  const ck=sectionChecks(which), pct=ck.total?Math.round(100*ck.done/ck.total):100;
+  return `<div class="chk-panel${ck.missing.length?"":" done"}" id="secpanel"><b>${ck.missing.length?`${SEC_TITLE[which]} checklist: ${ck.done} of ${ck.total} done`:`✓ ${SEC_TITLE[which]} has everything the plan needs`}</b>
+  <div class="chk-bar"><i style="width:${pct}%"></i></div>
+  ${ck.missing.length?`<div class="hint">Still needed (tap to jump):</div><div class="chk-list">${ck.missing.map(m=>`<button data-jumpabs="${esc(m[1])}">${esc(m[0])}</button>`).join("")}</div>`:""}</div>`;
+}
+function markMissing(){
+  document.querySelectorAll(".f.need").forEach(e=>e.classList.remove("need"));
+  let miss=[];
+  if(SEC_TITLE[tab])miss=sectionChecks(tab).missing.map(m=>m[1]);
+  else if(tab==="stands"&&P.stands[standIdx])miss=standChecks(P.stands[standIdx]).missing.map(m=>"stands."+standIdx+"."+m[1]);
+  miss.forEach(p=>{const e=document.querySelector(`[data-p="${CSS.escape(p)}"]`);const box=e&&e.closest(".f");if(box)box.classList.add("need")});
+}
+function refreshSec(){clearTimeout(refreshSec.t);refreshSec.t=setTimeout(()=>{const old=document.getElementById("secpanel");if(old&&SEC_TITLE[tab]){const tmp=document.createElement("div");tmp.innerHTML=secPanel(tab);old.replaceWith(tmp.firstElementChild)}markMissing()},400)}
 function standChecks(s){
   const sc=s.subcat||[], has=a=>a.some(x=>sc.includes(x));
   const nf=has(["SIV","OI"])&&!has(["PF","S","RF","SW","SP","NC","RTE","RA","VP","FW","OF"]);
@@ -585,10 +641,11 @@ function render(){
   migrateProp(P);
   const pick=document.getElementById("propPick");
   pick.innerHTML=Object.values(DB.props).sort((a,b)=>(b.updated||b.created).localeCompare(a.updated||a.created)).map(p=>`<option value="${p.id}"${p.id===P.id?" selected":""}>${esc((p.owners[0]&&p.owners[0].name)||"New property")}${p.property.town?" – "+esc(p.property.town):""}</option>`).join("");
-  document.getElementById("nav").innerHTML=TABS.map(([k,l])=>`<button data-tab="${k}" class="${k===tab?"on":""}">${l}</button>`).join("");
+  document.getElementById("nav").innerHTML=TABS.map(([k,l])=>`<button data-tab="${k}" class="${k===tab?"on":""}">${l}${SEC_TITLE[k]&&!sectionChecks(k).missing.length?" ✓":""}</button>`).join("");
   const v={property:vProperty,resources:vResources,water:vWater,stands:vStands,map:vMap,review:vReview,export:vExport}[tab]();
   document.getElementById("main").innerHTML=v;
   if(tab==="map")bindMap();
+  markMissing();
 }
 function clsMid(c){const n=parseFloat(c);return /\+/.test(String(c))?n+2:n}
 function diamTotHTML(st){const sum=k=>r1((st.diam||[]).reduce((a,d)=>a+(num(d[k])||0),0));return `<td><b>Total</b></td><td><b>${sum("tpa")}</b></td><td><b>${sum("ba")}</b></td><td><b>${sum("ags")}</b></td><td><b>${sum("snags")}</b></td>`}
@@ -634,7 +691,7 @@ document.addEventListener("input",e=>{
     setP(P,t.dataset.p,t.value);
     autoFill(t.dataset.p,t.value,prev);
     persist();
-    if(tab==="stands") refreshPanel();
+    if(tab==="stands") refreshPanel(); else refreshSec();
   }
 });
 document.addEventListener("change",e=>{
@@ -643,7 +700,7 @@ document.addEventListener("change",e=>{
     const am=t.dataset.p.match(/^(stands\.\d+\.regen\.\d+)\.abundance$/);
     if(am){const row=getP(P,am[1]);const cur=String(row.stems||"").trim();if(!cur||Object.values(REGEN_RANGE).includes(cur)){row.stems=REGEN_RANGE[t.value]||"";const el=document.querySelector(`[data-p="${am[1]}.stems"]`);if(el)el.value=row.stems}}
     persist();
-    if(/\.(species|regen|invasives)\.\d+\.\w+$/.test(t.dataset.p)||/\.(regenStocking|regenDist)$/.test(t.dataset.p)){if(tab==="stands")refreshPanel();clearTimeout(window.__selT);window.__selT=setTimeout(()=>{if(!document.activeElement||document.activeElement.tagName!=="SELECT")rerenderKeepFocus()},1200);return}
+    if(/\.(species|regen|invasives)\.\d+\.\w+$/.test(t.dataset.p)||/\.(regenStocking|regenDist)$/.test(t.dataset.p)){if(tab==="stands")refreshPanel();else refreshSec();clearTimeout(window.__selT);window.__selT=setTimeout(()=>{if(!document.activeElement||document.activeElement.tagName!=="SELECT")rerenderKeepFocus()},1200);return}
     rerenderKeepFocus();return}
   const grp=t.closest(".checks");
   if(grp){
@@ -660,6 +717,7 @@ document.addEventListener("click",e=>{
   const d=t.dataset;
   if(d.tab){tab=d.tab;render();window.scrollTo(0,0);return}
   if(d.jump){jumpTo("stands."+standIdx+"."+d.jump);return}
+  if(d.jumpabs){jumpTo(d.jumpabs);return}
   if(d.mic){toggleMic(d.mic,t);return}
   if(d.stand!=null){standIdx=+d.stand;if(typeof spPreview!=="undefined")spPreview=null;tab="stands";render();window.scrollTo(0,0);return}
   if(d.standadd){const n=P.stands.reduce((m,s)=>Math.max(m,parseInt(s.number)||0),0)+1;P.stands.push(blankStand(n));standIdx=P.stands.length-1;persist();render();window.scrollTo(0,0);return}
@@ -697,7 +755,7 @@ document.addEventListener("change",async e=>{if(e.target.id!=="importFile")retur
 function refreshPanel(){clearTimeout(refreshPanel.t);refreshPanel.t=setTimeout(()=>{const old=document.getElementById("chkpanel");if(!old||!P.stands[standIdx])return;const tmp=document.createElement("div");const s=P.stands[standIdx];
   // rebuild just the panel
   const html=vStands();tmp.innerHTML=html;const np=tmp.querySelector("#chkpanel");if(np)old.replaceWith(np);
-  const tabsOld=document.querySelector(".stand-tabs"),tabsNew=tmp.querySelector(".stand-tabs");if(tabsOld&&tabsNew)tabsOld.replaceWith(tabsNew);},400)}
+  const tabsOld=document.querySelector(".stand-tabs"),tabsNew=tmp.querySelector(".stand-tabs");if(tabsOld&&tabsNew)tabsOld.replaceWith(tabsNew);markMissing()},400)}
 function jumpTo(path){setTimeout(()=>jumpNow(path),230)}
 function jumpNow(path){
   const sel=`[data-p="${CSS.escape(path)}"]`;
