@@ -463,6 +463,8 @@ function sectionChecks(which){
     const ow=P.owners||[];
     add("Owner name","owners.0.name",ow.some(o=>t(o.name)));
     ow.forEach((o,i)=>{if(t(o.name))add(`Mailing address (${o.name})`,`owners.${i}.address`,t(o.address))});
+    {const named=ow.map((o,i)=>[o,i]).filter(([o])=>t(o.name));const pc=named.find(([o])=>o.name===P.primaryContact)||named[0];
+     if(pc){const [o,i]=pc;add(`Phone (${o.name}, primary contact)`,`owners.${i}.phone`,t(o.phone));add(`Email (${o.name}, primary contact)`,`owners.${i}.email`,t(o.email))}}
     if(types.includes("Transfer")){add("Previous owner(s)","transfer.prevOwner",t((P.transfer||{}).prevOwner));add("Date of transfer","transfer.transferDate",t((P.transfer||{}).transferDate))}
     [["town","Town"],["span","SPAN"],["glAcres","Grand list acres"],["enrolledAcres","Enrolled acres"],["orthophoto","Orthophoto #"],["bioRegion","Biophysical region"],["location","Location / access"]].forEach(([k,l])=>add(l,"property."+k,t(pr[k])));
     add("Landowner objectives","property.objectives",t(pr.objectives)||notes);
